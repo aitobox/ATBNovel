@@ -1,0 +1,2180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATBNovel - AI小说创作管理平台</title>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(17, 24, 39, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.3);
+            --secondary: #a855f7;
+            --accent: #ec4899;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.1) 0px, transparent 50%);
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--panel-border);
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-toggle-sidebar {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .btn-toggle-sidebar:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+
+        /* Tooltip style for sidebar toggle buttons */
+        .btn-toggle-sidebar::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.85);
+            background: #0f172a;
+            border: 1px solid var(--panel-border);
+            color: var(--text-primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        .btn-toggle-sidebar:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) scale(1);
+        }
+
+        #btn-expand-sidebar {
+            display: none;
+        }
+
+        .sidebar-collapsed #btn-expand-sidebar {
+            display: flex !important;
+        }
+
+        .logo-icon {
+            width: 2rem;
+            height: 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            background: linear-gradient(to right, #ffffff, var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .env-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .env-badge::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        /* Workspace Layout */
+        .workspace {
+            flex: 1;
+            display: flex;
+            height: calc(100vh - 64px);
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 320px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            gap: 1.5rem;
+            flex-shrink: 0;
+            overflow-y: auto;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-right-color 0.3s;
+        }
+
+        /* Collapsed Sidebar State */
+        .sidebar-collapsed aside {
+            width: 0;
+            padding-left: 0;
+            padding-right: 0;
+            border-right-color: transparent;
+            overflow: hidden;
+        }
+
+        aside > * {
+            transition: opacity 0.15s ease;
+            min-width: 270px;
+        }
+
+        .sidebar-collapsed aside > * {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .btn-new {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-new:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .project-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .project-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: transparent;
+            transition: background 0.25s ease;
+        }
+
+        .project-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(3px);
+        }
+
+        .project-card.active-card {
+            background: rgba(99, 102, 241, 0.06);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .project-card.active-card::before {
+            background: var(--primary);
+        }
+
+        .project-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .project-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 170px;
+        }
+
+        .project-status {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+        }
+
+        .status-running {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .status-completed {
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .status-pending {
+            background: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .project-style {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .progress-bar-bg {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            border-radius: 9999px;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .progress-txt {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* Main Workspace Panel */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: rgba(15, 23, 42, 0.2);
+        }
+
+        .view-panel {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: visible;
+            padding: 2rem;
+            min-height: 0;
+        }
+
+        .view-panel.active-view {
+            display: flex;
+        }
+
+        /* Welcome Screen */
+        .welcome-view {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 1.5rem;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .welcome-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .welcome-title {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .welcome-desc {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Form Creator Panel */
+        .creator-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        input[type="text"], select, textarea {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+
+        input[type="text"]:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        textarea.outline-input {
+            height: 250px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--primary);
+        }
+
+        .range-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #818cf8;
+            min-width: 45px;
+        }
+
+        .creator-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--panel-border);
+        }
+
+        .btn-cancel {
+            background: transparent;
+            border: 1px solid var(--panel-border);
+            color: var(--text-primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.25s;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 12px var(--primary-glow);
+            transition: all 0.3s;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Detail Panel Layout */
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-title-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .detail-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .detail-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .btn-control {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--panel-border);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.25s;
+        }
+
+        .btn-control:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-control.btn-run-active {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: #34d399;
+        }
+
+        .btn-control.btn-run-active:hover {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-control.btn-pause-active {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: #fbbf24;
+        }
+
+        .btn-control.btn-delete {
+            border-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .btn-control.btn-delete:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .detail-body-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 1.5rem;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .detail-left {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .detail-right {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--panel-border);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            min-height: 0;
+        }
+
+        /* Card panels */
+        .card-panel {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--panel-border);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Chapter Board Grid */
+        .board-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .chapter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+            gap: 5px;
+            padding: 4px;
+        }
+
+        .chapter-cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .chapter-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .chapter-cell.ch-pending {
+            background: rgba(148, 163, 184, 0.05);
+            border-color: rgba(148, 163, 184, 0.15);
+        }
+
+        .chapter-cell.ch-completed {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: #34d399;
+        }
+
+        .chapter-cell.ch-writing {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: rgba(245, 158, 11, 0.6);
+            color: #fbbf24;
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        .chapter-cell.ch-error {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.6);
+            color: #f87171;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 2px rgba(245, 158, 11, 0.3); }
+            100% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.6); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Tooltip */
+        .cell-tooltip {
+            position: absolute;
+            top: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0f172a;
+            border: 1px solid var(--panel-border);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            width: 220px;
+            font-size: 0.75rem;
+            color: var(--text-primary);
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s, visibility 0.2s;
+            z-index: 50;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+
+        .chapter-cell:hover .cell-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            color: #818cf8;
+            margin-bottom: 0.25rem;
+        }
+
+        .tooltip-meta {
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            font-style: italic;
+        }
+
+        .tooltip-conflict {
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        /* Console Terminal Logs */
+        .console-panel {
+            height: 200px;
+        }
+
+        .terminal-box {
+            background: #020617;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-family: monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            color: #38bdf8;
+            overflow-y: auto;
+            flex: 1;
+            white-space: pre-wrap;
+        }
+
+        /* World Memory Visualizer Tabs */
+        .tabs-header {
+            display: flex;
+            border-bottom: 1px solid var(--panel-border);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.5rem 0.25rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active-tab {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tabs-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .tab-panel {
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .tab-panel.active-panel {
+            display: flex;
+        }
+
+        #tab-memory {
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .memory-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+
+        .mcard-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #818cf8;
+            margin-bottom: 0.25rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .mcard-meta {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .mcard-desc {
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        /* Text Reader Card */
+        .reader-panel {
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .reader-content {
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: #e2e8f0;
+        }
+
+        .reader-content h2 {
+            font-size: 1.25rem;
+            color: white;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding-bottom: 0.25rem;
+        }
+
+        .reader-content h3 {
+            font-size: 1.1rem;
+            color: #c084fc;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .reader-content p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        .reader-content hr {
+            border: none;
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            margin: 2rem 0;
+        }
+
+        /* Collapsible Chapter Cards */
+        .reader-chapter-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+
+        .reader-chapter-card:hover {
+            border-color: rgba(168, 85, 247, 0.25);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .reader-chapter-summary {
+            padding: 1rem;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #f8fafc;
+            cursor: pointer;
+            outline: none;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            list-style: none;
+        }
+        
+        .reader-chapter-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .reader-chapter-summary::before {
+            content: '▶';
+            display: inline-block;
+            margin-right: 0.75rem;
+            font-size: 0.75rem;
+            color: var(--secondary);
+            transition: transform 0.25s ease;
+        }
+
+        .reader-chapter-card[open] > .reader-chapter-summary::before {
+            transform: rotate(90deg);
+        }
+
+        .chapter-summary-text {
+            flex: 1;
+        }
+
+        .reader-chapter-body {
+            padding: 0 1.25rem 1.25rem 1.25rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-card {
+            background: #0f172a;
+            border: 1px solid var(--panel-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            max-width: 450px;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .modal-body {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">ATB</div>
+            <div class="logo-text">ATBNovel</div>
+        </div>
+        <div id="env-badge" class="env-badge">加载配置中...</div>
+    </header>
+
+    <!-- Workspace -->
+    <div class="workspace" style="position: relative;">
+        <!-- Floating Expand Button -->
+        <button class="btn-toggle-sidebar" id="btn-expand-sidebar" data-tooltip="展开项目列表" style="position: absolute; left: 1rem; top: 1.5rem; z-index: 100; display: none; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); border: 1px solid var(--panel-border); color: var(--text-primary); border-radius: 0.5rem; width: 2.25rem; height: 2.25rem; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; transition: all 0.2s;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"></polyline><line x1="6" y1="17" x2="6" y2="7"></line></svg>
+        </button>
+
+        <!-- Sidebar -->
+        <aside>
+            <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="sidebar-title">小说项目列表</span>
+                    <button class="btn-toggle-sidebar" id="btn-collapse-sidebar" data-tooltip="收起项目列表" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.25rem; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="11 17 6 12 11 7"></polyline><line x1="18" y1="17" x2="18" y2="7"></line></svg>
+                    </button>
+                </div>
+                <button class="btn-new" id="btn-show-create">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    新建
+                </button>
+            </div>
+            <!-- Project list containers -->
+            <div class="project-list" id="sidebar-projects-list">
+                <!-- Dynamically populated -->
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main>
+            <!-- Welcome View -->
+            <div class="view-panel welcome-view active-view" id="view-welcome">
+                <div class="welcome-icon">✍️</div>
+                <h1 class="welcome-title">欢迎使用 ATBNovel</h1>
+                <p class="welcome-desc">
+                    ATBNovel 是一款全自动的史诗级长篇小说写作平台。<br>
+                    只需提供一份大纲描述，设置目标章节数与风格，系统即可自动分拆原子任务、编排世界观人物记忆，并开启多幕深度场景迭代扩写。
+                </p>
+                <button class="btn-new" id="btn-welcome-create" style="margin-top: 1rem; padding: 0.75rem 2rem;">开始创作您的第一部作品</button>
+            </div>
+
+            <!-- Create Form View -->
+            <div class="view-panel" id="view-create">
+                <h1 class="creator-title" id="creator-panel-title">开始新的小说创作</h1>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="input-title">小说名称</label>
+                        <input type="text" id="input-title" placeholder="如：《逆流而上：最后的绿茵灵性》">
+                    </div>
+                    <div class="form-group">
+                        <label for="input-style">流派风格与风格笔触</label>
+                        <input type="text" id="input-style" placeholder="如：科幻/硬科幻 或 青春热血/中国底层足球小镇">
+                    </div>
+                    <div class="form-group">
+                        <label for="input-chapters">规划章节总数</label>
+                        <div class="slider-group">
+                            <input type="range" id="input-chapters" min="5" max="100" step="5" value="100">
+                            <span class="range-value" id="val-chapters">100 章</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="input-words">单章最低字数指标</label>
+                        <div class="slider-group">
+                            <input type="range" id="input-words" min="1000" max="5000" step="500" value="3000">
+                            <span class="range-value" id="val-words">3000 字</span>
+                        </div>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="input-outline">核心小说大纲 (支持 Markdown 格式描述)</label>
+                        <textarea id="input-outline" class="outline-input" placeholder="请详细输入或粘贴小说总体的故事梗概、时代纪元划分或初始设定大纲，LLM会基于大纲对章节结构进行精准切分..."></textarea>
+                    </div>
+                    <!-- Reset Progress Option (visible only during edit mode) -->
+                    <div class="form-group full-width" id="form-group-reset-progress" style="display: none; flex-direction: row; align-items: center; gap: 0.75rem; background: rgba(239, 68, 68, 0.05); padding: 1rem; border-radius: 0.5rem; border: 1px dashed rgba(239, 68, 68, 0.2);">
+                        <input type="checkbox" id="input-reset-progress" style="width: 1.15rem; height: 1.15rem; accent-color: var(--danger); cursor: pointer; flex-shrink: 0;">
+                        <label for="input-reset-progress" style="color: #f87171; cursor: pointer; font-weight: 600; margin-bottom: 0;">
+                            重置创作进度：勾选后会清空该项目当前的所有已生成大纲任务、记忆库以及 master_novel.md 手稿，从第1章重新开始！（重要：不勾选则会保留已完成章节，仅对后续未写章节应用新大纲与配置）
+                        </label>
+                    </div>
+                </div>
+                <div class="creator-actions">
+                    <button class="btn-cancel" id="btn-create-cancel">取消</button>
+                    <button class="btn-submit" id="btn-create-submit">一键开启自动化管线</button>
+                </div>
+            </div>
+
+            <!-- Project Details View -->
+            <div class="view-panel" id="view-detail">
+                <div class="detail-header">
+                    <div class="detail-title-area">
+                        <span class="detail-title" id="detail-proj-title">小说标题</span>
+                        <span class="detail-subtitle" id="detail-proj-subtitle">流派: 科幻 | 创建时间: --</span>
+                    </div>
+                    <div class="detail-actions">
+                        <button class="btn-control" id="btn-control-edit">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            修改配置
+                        </button>
+                        <button class="btn-control btn-run-active" id="btn-control-toggle">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            <span id="txt-control-toggle">运行</span>
+                        </button>
+                        <button class="btn-control" id="btn-control-export" style="background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2); color: #34d399;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            导出 Markdown
+                        </button>
+                        <button class="btn-control btn-delete" id="btn-control-delete">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            删除
+                        </button>
+                    </div>
+                </div>
+
+                <div class="detail-body-grid" style="display: flex; flex-direction: column; gap: 1.5rem; flex: 1; overflow: visible; min-height: 0;">
+                    <!-- Top Row: Grid + Console side-by-side (50% width each) -->
+                    <div style="display: flex; gap: 1.5rem; flex-shrink: 0; height: 200px;">
+                        <!-- Left: Chapter Grid -->
+                        <div class="card-panel" style="flex: 1; display: flex; flex-direction: column; overflow: visible; position: relative; z-index: 20; padding: 1.25rem;">
+                            <div class="panel-header-title" style="margin-bottom: 0.75rem;">
+                                <span>章节编排大纲与任务消费状态</span>
+                                <span class="progress-txt" id="detail-progress-fraction">0 / 0 已完成</span>
+                            </div>
+                            <div class="board-container" style="flex: 1; overflow: visible; padding-right: 0;">
+                                <div class="chapter-grid" id="detail-chapter-grid" style="overflow: visible;">
+                                    <!-- Cells -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Terminal Console -->
+                        <div class="card-panel console-panel" style="flex: 1; display: flex; flex-direction: column; height: 100%; padding: 1.25rem;">
+                            <div class="panel-header-title" style="margin-bottom: 0.75rem;">
+                                <span>实时执行管线监控终端</span>
+                            </div>
+                            <div class="terminal-box" id="detail-terminal" style="flex: 1; margin: 0; min-height: 0;">
+                                终端空闲...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom: Unified Tabs Container (Preview & Memory) -->
+                    <div class="detail-right" style="flex: 1; display: flex; flex-direction: column; min-height: 0; margin: 0;">
+                        <div class="tabs-header">
+                            <button class="tab-btn active-tab" data-tab="tab-reader">最新手稿预览</button>
+                            <button class="tab-btn" data-tab="tab-memory">世界观记忆数据库</button>
+                        </div>
+                        <div class="tabs-content">
+                            <!-- Reader Tab -->
+                            <div class="tab-panel reader-panel active-panel" id="tab-reader">
+                                <div class="reader-actions-bar" style="display: flex; gap: 0.75rem; margin-bottom: 0.5rem; justify-content: flex-end; flex-shrink: 0;">
+                                    <button class="btn-control" id="btn-reader-expand-all" style="font-size: 0.75rem; padding: 0.25rem 0.75rem; background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2); color: #c084fc;">
+                                        展开全部章节
+                                    </button>
+                                    <button class="btn-control" id="btn-reader-collapse-all" style="font-size: 0.75rem; padding: 0.25rem 0.75rem; background: rgba(255, 255, 255, 0.02); border-color: rgba(255, 255, 255, 0.1); color: var(--text-secondary);">
+                                        收起全部章节
+                                    </button>
+                                </div>
+                                <div class="reader-content" id="detail-reader">
+                                    暂无手稿生成...
+                                </div>
+                            </div>
+
+                            <!-- Memory Tab -->
+                            <div class="tab-panel" id="tab-memory">
+                                <div style="display:flex; flex-direction:column; gap:1rem; overflow-y:auto; flex:1; padding-right:0.25rem;">
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.5rem;">核心出场角色记忆</div>
+                                        <div style="display:flex; flex-direction:column; gap:0.5rem;" id="mem-characters">
+                                            <span style="font-size:0.8rem; color:var(--text-secondary);">暂无数据</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.5rem;">关键道具与装备</div>
+                                        <div style="display:flex; flex-direction:column; gap:0.5rem;" id="mem-items">
+                                            <span style="font-size:0.8rem; color:var(--text-secondary);">暂无数据</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.5rem;">情感关系线走向</div>
+                                        <div class="memory-card" id="mem-relationships">
+                                            <span style="font-size:0.8rem; color:var(--text-secondary);">暂无数据</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.5rem;">悬念伏笔与走向线</div>
+                                        <div style="display:flex; flex-direction:column; gap:0.5rem;" id="mem-threads">
+                                            <span style="font-size:0.8rem; color:var(--text-secondary);">暂无数据</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Confirm Dialog -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal-card">
+            <div class="modal-header" id="confirm-title">确认操作</div>
+            <div class="modal-body" id="confirm-body">你确定要删除这个项目吗？此操作无法撤销。</div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="btn-confirm-no" style="padding:0.4rem 1rem;">取消</button>
+                <button class="btn-submit" id="btn-confirm-yes" style="padding:0.4rem 1rem; background:var(--danger); box-shadow:none;">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // UI Navigation State
+        let currentView = 'welcome';
+        let selectedProjectId = null;
+        let projectsList = [];
+        let pollingTimer = null;
+        let deleteCallback = null;
+        let projectPausingState = {};
+        let currentProjectData = null;
+        let isEditMode = false;
+
+        // Dom Elements
+        const envBadge = document.getElementById('env-badge');
+        const sidebarList = document.getElementById('sidebar-projects-list');
+        const viewWelcome = document.getElementById('view-welcome');
+        const viewCreate = document.getElementById('view-create');
+        const viewDetail = document.getElementById('view-detail');
+
+        // Nav Buttons
+        const btnShowCreate = document.getElementById('btn-show-create');
+        const btnWelcomeCreate = document.getElementById('btn-welcome-create');
+        const btnCreateCancel = document.getElementById('btn-create-cancel');
+        const btnCreateSubmit = document.getElementById('btn-create-submit');
+
+        // Form fields
+        const inputTitle = document.getElementById('input-title');
+        const inputStyle = document.getElementById('input-style');
+        const inputChapters = document.getElementById('input-chapters');
+        const valChapters = document.getElementById('val-chapters');
+        const inputWords = document.getElementById('input-words');
+        const valWords = document.getElementById('val-words');
+        const inputOutline = document.getElementById('input-outline');
+
+        // Detail Fields
+        const detailTitle = document.getElementById('detail-proj-title');
+        const detailSubtitle = document.getElementById('detail-proj-subtitle');
+        const btnControlToggle = document.getElementById('btn-control-toggle');
+        const txtControlToggle = document.getElementById('txt-control-toggle');
+        const btnControlDelete = document.getElementById('btn-control-delete');
+        const btnControlExport = document.getElementById('btn-control-export');
+        const btnControlEdit = document.getElementById('btn-control-edit');
+        const btnCollapseSidebar = document.getElementById('btn-collapse-sidebar');
+        const btnExpandSidebar = document.getElementById('btn-expand-sidebar');
+        const detailProgressFraction = document.getElementById('detail-progress-fraction');
+        const formGroupResetProgress = document.getElementById('form-group-reset-progress');
+        const inputResetProgress = document.getElementById('input-reset-progress');
+        const creatorPanelTitle = document.getElementById('creator-panel-title');
+        const detailChapterGrid = document.getElementById('detail-chapter-grid');
+        const detailTerminal = document.getElementById('detail-terminal');
+        const detailReader = document.getElementById('detail-reader');
+        const btnReaderExpandAll = document.getElementById('btn-reader-expand-all');
+        const btnReaderCollapseAll = document.getElementById('btn-reader-collapse-all');
+
+        // Memory Containers
+        const memCharacters = document.getElementById('mem-characters');
+        const memItems = document.getElementById('mem-items');
+        const memRelationships = document.getElementById('mem-relationships');
+        const memThreads = document.getElementById('mem-threads');
+
+        // Modal
+        const confirmModal = document.getElementById('confirm-modal');
+        const btnConfirmYes = document.getElementById('btn-confirm-yes');
+        const btnConfirmNo = document.getElementById('btn-confirm-no');
+        const confirmTitle = document.getElementById('confirm-title');
+        const confirmBody = document.getElementById('confirm-body');
+
+        // Form Sliders Listeners
+        inputChapters.addEventListener('input', (e) => {
+            valChapters.textContent = e.target.value + ' 章';
+        });
+        inputWords.addEventListener('input', (e) => {
+            valWords.textContent = e.target.value + ' 字';
+        });
+
+        // View Controller
+        function switchView(viewName) {
+            currentView = viewName;
+            viewWelcome.classList.remove('active-view');
+            viewCreate.classList.remove('active-view');
+            viewDetail.classList.remove('active-view');
+
+            if (viewName === 'welcome') {
+                viewWelcome.classList.add('active-view');
+                selectedProjectId = null;
+            } else if (viewName === 'create') {
+                viewCreate.classList.add('active-view');
+                if (!isEditMode) {
+                    selectedProjectId = null;
+                    // Reset fields
+                    inputTitle.value = '';
+                    inputStyle.value = '';
+                    inputOutline.value = '';
+                    inputChapters.value = 100;
+                    valChapters.textContent = '100 章';
+                    inputWords.value = 3000;
+                    valWords.textContent = '3000 字';
+                    
+                    creatorPanelTitle.textContent = "开始新的小说创作";
+                    btnCreateSubmit.textContent = "一键开启自动化管线";
+                    formGroupResetProgress.style.display = 'none';
+                }
+            } else if (viewName === 'detail') {
+                viewDetail.classList.add('active-view');
+            }
+            updateSidebarSelection();
+        }
+
+        // Sidebar Navigation
+        btnShowCreate.addEventListener('click', () => {
+            isEditMode = false;
+            switchView('create');
+        });
+        btnWelcomeCreate.addEventListener('click', () => {
+            isEditMode = false;
+            switchView('create');
+        });
+        btnCreateCancel.addEventListener('click', () => {
+            if (isEditMode) {
+                isEditMode = false;
+                switchView('detail');
+                loadProjectDetail(selectedProjectId);
+            } else {
+                switchView('welcome');
+            }
+        });
+
+        // Tab selection logic
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active-panel'));
+                btn.classList.add('active-tab');
+                const targetId = btn.getAttribute('data-tab');
+                document.getElementById(targetId).classList.add('active-panel');
+                if (targetId === 'tab-reader' && selectedProjectId) {
+                    loadNovelText(selectedProjectId);
+                }
+            });
+        });
+
+        // Alert Helper using UI Modal (Production Safe, No alert() window block)
+        function showConfirm(title, message, onYes) {
+            confirmTitle.textContent = title;
+            confirmBody.textContent = message;
+            confirmModal.style.display = 'flex';
+            deleteCallback = onYes;
+        }
+
+        btnConfirmNo.addEventListener('click', () => {
+            confirmModal.style.display = 'none';
+            deleteCallback = null;
+        });
+
+        btnConfirmYes.addEventListener('click', () => {
+            confirmModal.style.display = 'none';
+            if (deleteCallback) deleteCallback();
+        });
+
+        // Fetch Global Config
+        async function fetchConfig() {
+            try {
+                const res = await fetch('/api/config');
+                if (res.ok) {
+                    const data = await res.json();
+                    envBadge.textContent = '模型: ' + data.model_name;
+                } else {
+                    envBadge.textContent = '无法获取服务端状态';
+                }
+            } catch (err) {
+                envBadge.textContent = '通信错误';
+            }
+        }
+
+        // Fetch Projects List
+        async function loadProjectsList() {
+            try {
+                const res = await fetch('/api/projects');
+                if (res.ok) {
+                    projectsList = await res.json();
+                    renderProjectsList();
+                }
+            } catch (err) {
+                console.error("Failed to load projects list", err);
+            }
+        }
+
+        function updateSidebarSelection() {
+            document.querySelectorAll('.project-card').forEach(card => {
+                const pid = card.getAttribute('data-id');
+                if (pid === selectedProjectId) {
+                    card.classList.add('active-card');
+                } else {
+                    card.classList.remove('active-card');
+                }
+            });
+        }
+
+        function renderProjectsList() {
+            sidebarList.replaceChildren();
+            if (projectsList.length === 0) {
+                const emptyMsg = document.createElement('span');
+                emptyMsg.style.fontSize = '0.8rem';
+                emptyMsg.style.color = 'var(--text-secondary)';
+                emptyMsg.style.textAlign = 'center';
+                emptyMsg.style.marginTop = '2rem';
+                emptyMsg.textContent = '暂无小说项目';
+                sidebarList.appendChild(emptyMsg);
+                return;
+            }
+
+            projectsList.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'project-card';
+                if (p.id === selectedProjectId) {
+                    card.classList.add('active-card');
+                }
+                card.setAttribute('data-id', p.id);
+
+                // Meta container
+                const meta = document.createElement('div');
+                meta.className = 'project-meta';
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'project-name';
+                nameSpan.textContent = p.title;
+                meta.appendChild(nameSpan);
+
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'project-status';
+                
+                // Set status text and css
+                let statusText = '等待中';
+                let statusClass = 'status-pending';
+                if (p.status === 'active') {
+                    statusText = '写作中';
+                    statusClass = 'status-active';
+                } else if (p.status === 'running') {
+                    statusText = '已暂停';
+                    statusClass = 'status-running';
+                } else if (p.status === 'completed') {
+                    statusText = '已完成';
+                    statusClass = 'status-completed';
+                }
+                statusSpan.textContent = statusText;
+                statusSpan.className = `project-status ${statusClass}`;
+                meta.appendChild(statusSpan);
+                card.appendChild(meta);
+
+                // Style tag
+                const styleDiv = document.createElement('div');
+                styleDiv.className = 'project-style';
+                styleDiv.textContent = `流派: ${p.style}`;
+                card.appendChild(styleDiv);
+
+                // Progress container
+                const progressDiv = document.createElement('div');
+                progressDiv.className = 'progress-container';
+
+                const barBg = document.createElement('div');
+                barBg.className = 'progress-bar-bg';
+                const barFill = document.createElement('div');
+                barFill.className = 'progress-bar-fill';
+                const pct = p.total_chapters > 0 ? (p.progress / p.total_chapters) * 100 : 0;
+                barFill.style.width = `${pct}%`;
+                barBg.appendChild(barFill);
+                progressDiv.appendChild(barBg);
+
+                const txt = document.createElement('span');
+                txt.className = 'progress-txt';
+                txt.textContent = `${p.progress} / ${p.total_chapters} 章`;
+                progressDiv.appendChild(txt);
+
+                card.appendChild(progressDiv);
+
+                // Click event
+                card.addEventListener('click', () => {
+                    selectProject(p.id);
+                });
+
+                sidebarList.appendChild(card);
+            });
+        }
+
+        // Submit New Project or Update Config
+        btnCreateSubmit.addEventListener('click', async () => {
+            const title = inputTitle.value.trim();
+            const style = inputStyle.value.trim();
+            const outline = inputOutline.value.trim();
+            const totalChapters = parseInt(inputChapters.value);
+            const minWords = parseInt(inputWords.value);
+
+            if (!title || !style || !outline) {
+                showConfirm('提示', '请完整填入小说标题、风格流派大纲信息。', null);
+                return;
+            }
+
+            if (isEditMode) {
+                // Post config update
+                try {
+                    const res = await fetch(`/api/projects/${selectedProjectId}/config`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: title,
+                            outline: outline,
+                            total_chapters: totalChapters,
+                            min_words: minWords,
+                            max_words: minWords + 2000,
+                            style: style,
+                            reset_progress: inputResetProgress.checked
+                        })
+                    });
+
+                    if (res.ok) {
+                        isEditMode = false;
+                        switchView('detail');
+                        await loadProjectsList();
+                        loadProjectDetail(selectedProjectId);
+                    } else {
+                        const errData = await res.json();
+                        showConfirm('错误', '更新配置失败: ' + (errData.detail || '未知原因'), null);
+                    }
+                } catch (err) {
+                    showConfirm('连接失败', '无法连接至后台接口: ' + err.message, null);
+                }
+                return;
+            }
+
+            // Normal Create Mode
+            try {
+                const res = await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        outline: outline,
+                        total_chapters: totalChapters,
+                        min_words: minWords,
+                        max_words: minWords + 2000,
+                        style: style
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    await loadProjectsList();
+                    // Auto select and trigger generation
+                    selectProject(data.project_id);
+                    // Automatically trigger start
+                    await sendControlAction(data.project_id, 'start');
+                } else {
+                    const errData = await res.json();
+                    showConfirm('错误', '创建小说失败: ' + (errData.detail || '未知服务器错误'), null);
+                }
+            } catch (err) {
+                showConfirm('连接失败', '无法连接至后台接口: ' + err.message, null);
+            }
+        });
+
+        // Select Project View
+        function selectProject(projectId) {
+            selectedProjectId = projectId;
+            switchView('detail');
+            loadProjectDetail(projectId);
+            loadProjectLogs(projectId);
+            // Default to reader tab
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active-panel'));
+            document.querySelector('[data-tab="tab-reader"]').classList.add('active-tab');
+            document.getElementById('tab-reader').classList.add('active-panel');
+            loadNovelText(projectId);
+        }
+
+        // Load project detail metadata
+        async function loadProjectDetail(projectId) {
+            if (selectedProjectId !== projectId) return;
+            try {
+                const res = await fetch(`/api/projects/${projectId}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                
+                // Cache project data globally
+                currentProjectData = data;
+                
+                // Update Title
+                detailTitle.textContent = data.config.title || projectId;
+                detailSubtitle.textContent = `风格流派: ${data.config.style} | 单章字数指标: ${data.config.min_words}字 | 创建时间: ${data.config.created_at || '--'}`;
+                
+                // Clear pausing state if the project is no longer active in the backend
+                if (projectPausingState[projectId] && !data.is_active) {
+                    projectPausingState[projectId] = false;
+                }
+
+                // Update Control Toggle Button styling based on is_active status
+                btnControlToggle.replaceChildren();
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.setAttribute("width", "14");
+                svg.setAttribute("height", "14");
+                svg.setAttribute("viewBox", "0 0 24 24");
+                svg.setAttribute("fill", "none");
+                svg.setAttribute("stroke", "currentColor");
+                svg.setAttribute("stroke-width", "2");
+                
+                const span = document.createElement('span');
+                
+                if (projectPausingState[projectId]) {
+                    btnControlToggle.className = 'btn-control btn-pause-active';
+                    btnControlToggle.disabled = true;
+                    btnControlToggle.style.opacity = '0.7';
+                    btnControlToggle.style.cursor = 'not-allowed';
+                    
+                    // Spinning loader circle
+                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circle.setAttribute("cx", "12");
+                    circle.setAttribute("cy", "12");
+                    circle.setAttribute("r", "10");
+                    circle.setAttribute("stroke", "currentColor");
+                    circle.setAttribute("stroke-width", "3");
+                    circle.setAttribute("fill", "none");
+                    circle.style.strokeDasharray = '40';
+                    circle.style.transformOrigin = 'center';
+                    circle.style.animation = 'spin 1s linear infinite';
+                    svg.appendChild(circle);
+                    
+                    span.textContent = '正在暂停中...';
+                } else if (data.is_active) {
+                    btnControlToggle.className = 'btn-control btn-pause-active';
+                    btnControlToggle.disabled = false;
+                    btnControlToggle.style.opacity = '';
+                    btnControlToggle.style.cursor = '';
+                    // Pause icon
+                    const rect1 = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rect1.setAttribute("x", "6");
+                    rect1.setAttribute("y", "4");
+                    rect1.setAttribute("width", "4");
+                    rect1.setAttribute("height", "16");
+                    const rect2 = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rect2.setAttribute("x", "14");
+                    rect2.setAttribute("y", "4");
+                    rect2.setAttribute("width", "4");
+                    rect2.setAttribute("height", "16");
+                    svg.appendChild(rect1);
+                    svg.appendChild(rect2);
+                    span.textContent = '暂停管线';
+                } else {
+                    btnControlToggle.className = 'btn-control btn-run-active';
+                    btnControlToggle.disabled = false;
+                    btnControlToggle.style.opacity = '';
+                    btnControlToggle.style.cursor = '';
+                    // Play icon
+                    const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                    poly.setAttribute("points", "5 3 19 12 5 21 5 3");
+                    svg.appendChild(poly);
+                    span.textContent = '启动创作';
+                }
+                btnControlToggle.appendChild(svg);
+                btnControlToggle.appendChild(span);
+
+                // Fraction progress
+                detailProgressFraction.textContent = `${data.progress} / ${data.total} 章节消费已完成`;
+
+                // Chapter Grid Board
+                renderChapterGrid(data.tasks);
+
+                // Memory tabs
+                renderMemory(data.memory);
+
+            } catch (err) {
+                console.error("Failed to load project details", err);
+            }
+        }
+
+        // Render chapter board cells
+        function renderChapterGrid(tasks) {
+            detailChapterGrid.replaceChildren();
+            if (!tasks || tasks.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.style.gridColumn = 'span 10';
+                emptyMsg.style.textAlign = 'center';
+                emptyMsg.style.fontSize = '0.8rem';
+                emptyMsg.style.color = 'var(--text-secondary)';
+                emptyMsg.style.padding = '1rem';
+                emptyMsg.textContent = '章节任务队列未初始化。开始运行后，系统会自动拆解生成任务列表。';
+                detailChapterGrid.appendChild(emptyMsg);
+                return;
+            }
+
+            tasks.forEach(t => {
+                const cell = document.createElement('div');
+                cell.className = 'chapter-cell';
+                cell.textContent = t.chapter_num;
+
+                // Color code by status
+                if (t.status === 'completed') {
+                    cell.classList.add('ch-completed');
+                } else if (t.status === 'writing') {
+                    cell.classList.add('ch-writing');
+                } else if (t.status === 'error') {
+                    cell.classList.add('ch-error');
+                } else {
+                    cell.classList.add('ch-pending');
+                }
+
+                // Append detailed hover tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'cell-tooltip';
+                
+                const ttTitle = document.createElement('div');
+                ttTitle.className = 'tooltip-title';
+                ttTitle.textContent = `第 ${t.chapter_num} 章: ${t.title || '设计中'}`;
+                tooltip.appendChild(ttTitle);
+
+                const ttMeta = document.createElement('div');
+                ttMeta.className = 'tooltip-meta';
+                ttMeta.textContent = `分卷: ${t.volume || '未分类'}`;
+                if (t.word_count) {
+                    ttMeta.textContent += ` | ${t.word_count} 字`;
+                }
+                tooltip.appendChild(ttMeta);
+
+                const ttConflict = document.createElement('div');
+                ttConflict.className = 'tooltip-conflict';
+                ttConflict.textContent = `核心冲突: ${t.conflict || '大纲尚未分解...'}`;
+                tooltip.appendChild(ttConflict);
+
+                cell.appendChild(tooltip);
+                
+                // Add click listener to jump to manuscript section
+                cell.addEventListener('click', () => {
+                    if (t.status === 'completed') {
+                        // Switch active tabs manually to prevent redundant load concurrent request
+                        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+                        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active-panel'));
+                        
+                        const tabBtn = document.querySelector('[data-tab="tab-reader"]');
+                        if (tabBtn) tabBtn.classList.add('active-tab');
+                        
+                        const panel = document.getElementById('tab-reader');
+                        if (panel) panel.classList.add('active-panel');
+                        
+                        loadNovelText(selectedProjectId, t.chapter_num);
+                    } else if (t.status === 'writing') {
+                        showConfirm('提示', '该章节正在写作中，尚无完整手稿生成。', null);
+                    } else {
+                        showConfirm('提示', '该章节处于等待队列中，尚未开始写作。', null);
+                    }
+                });
+
+                detailChapterGrid.appendChild(cell);
+            });
+        }
+
+        // Render memory database tables
+        function renderMemory(memory) {
+            // Characters
+            memCharacters.replaceChildren();
+            if (memory && memory.characters && Object.keys(memory.characters).length > 0) {
+                Object.entries(memory.characters).forEach(([name, data]) => {
+                    const card = document.createElement('div');
+                    card.className = 'memory-card';
+
+                    const title = document.createElement('div');
+                    title.className = 'mcard-title';
+                    title.textContent = name;
+                    
+                    const loc = document.createElement('span');
+                    loc.style.fontSize = '0.75rem';
+                    loc.style.color = 'var(--text-secondary)';
+                    loc.style.fontWeight = 'normal';
+                    loc.textContent = `位置: ${data.location || '未知'}`;
+                    title.appendChild(loc);
+                    card.appendChild(title);
+
+                    const meta = document.createElement('div');
+                    meta.className = 'mcard-meta';
+                    meta.textContent = `状态: ${data.status || '活跃'} | 情感走向: ${data.emotion || '稳定'}`;
+                    card.appendChild(meta);
+
+                    const desc = document.createElement('div');
+                    desc.className = 'mcard-desc';
+                    desc.textContent = data.description || '';
+                    card.appendChild(desc);
+
+                    memCharacters.appendChild(card);
+                });
+            } else {
+                const empty = document.createElement('span');
+                empty.className = 'mcard-meta';
+                empty.textContent = '暂无人物记忆模型';
+                memCharacters.appendChild(empty);
+            }
+
+            // Items
+            memItems.replaceChildren();
+            if (memory && memory.items && Object.keys(memory.items).length > 0) {
+                Object.entries(memory.items).forEach(([name, data]) => {
+                    const card = document.createElement('div');
+                    card.className = 'memory-card';
+
+                    const title = document.createElement('div');
+                    title.className = 'mcard-title';
+                    title.textContent = name;
+                    card.appendChild(title);
+
+                    const desc = document.createElement('div');
+                    desc.className = 'mcard-desc';
+                    desc.textContent = `所处位置: ${data.location || '未知'} | 性能/损耗状态: ${data.status || '完整'}`;
+                    card.appendChild(desc);
+
+                    memItems.appendChild(card);
+                });
+            } else {
+                const empty = document.createElement('span');
+                empty.className = 'mcard-meta';
+                empty.textContent = '暂无道具设备记录';
+                memItems.appendChild(empty);
+            }
+
+            // Relationships
+            memRelationships.replaceChildren();
+            if (memory && memory.relationships && Object.keys(memory.relationships).length > 0) {
+                Object.entries(memory.relationships).forEach(([pair, desc]) => {
+                    const wrap = document.createElement('div');
+                    wrap.style.marginBottom = '0.5rem';
+                    wrap.style.fontSize = '0.8rem';
+                    
+                    const bold = document.createElement('strong');
+                    bold.style.color = '#a855f7';
+                    bold.textContent = `${pair}: `;
+                    wrap.appendChild(bold);
+
+                    const txt = document.createTextNode(desc);
+                    wrap.appendChild(txt);
+                    memRelationships.appendChild(wrap);
+                });
+            } else {
+                memRelationships.textContent = '暂无复杂情感网络线。';
+            }
+
+            // Plot threads
+            memThreads.replaceChildren();
+            if (memory && memory.plot_threads && memory.plot_threads.length > 0) {
+                memory.plot_threads.forEach(t => {
+                    const card = document.createElement('div');
+                    card.className = 'memory-card';
+                    card.style.borderColor = 'rgba(236, 72, 153, 0.15)';
+                    
+                    const desc = document.createElement('div');
+                    desc.className = 'mcard-desc';
+                    desc.style.color = '#f472b6';
+                    desc.textContent = t;
+                    card.appendChild(desc);
+                    
+                    memThreads.appendChild(card);
+                });
+            } else {
+                const empty = document.createElement('span');
+                empty.className = 'mcard-meta';
+                empty.textContent = '大纲剧情已完全推进回收。';
+                memThreads.appendChild(empty);
+            }
+        }
+
+        // Real-time Logs fetching
+        async function loadProjectLogs(projectId) {
+            if (selectedProjectId !== projectId) return;
+            try {
+                const res = await fetch(`/api/projects/${projectId}/logs`);
+                if (!res.ok) return;
+                const data = await res.json();
+                detailTerminal.textContent = data.logs;
+                // Scroll to bottom
+                detailTerminal.scrollTop = detailTerminal.scrollHeight;
+            } catch (err) {
+                console.error("Failed to load logs", err);
+            }
+        }
+
+        // Markdown Reader view (Security Escaped Vanilla Renderer)
+        async function loadNovelText(projectId, targetChapterNum = null) {
+            if (selectedProjectId !== projectId) return;
+            try {
+                const res = await fetch(`/api/projects/${projectId}/novel`);
+                if (!res.ok) return;
+                const data = await res.json();
+                
+                const lines = data.content.split('\n');
+                detailReader.replaceChildren();
+                
+                let currentChapterDetails = null;
+                let currentChapterBody = null;
+                let currentParagraphLines = [];
+
+                function flushParagraph() {
+                    if (currentParagraphLines.length > 0) {
+                        const p = document.createElement('p');
+                        p.textContent = currentParagraphLines.join(' ');
+                        if (currentChapterBody) {
+                            currentChapterBody.appendChild(p);
+                        } else {
+                            detailReader.appendChild(p);
+                        }
+                        currentParagraphLines = [];
+                    }
+                }
+
+                lines.forEach(line => {
+                    const trimmed = line.trim();
+                    
+                    // Regex match: ## 第X章 [标题]
+                    const chapterMatch = trimmed.match(/^##\s*第\s*(\d+)\s*章\s*(.*)/);
+                    
+                    if (chapterMatch) {
+                        flushParagraph();
+                        const chNum = parseInt(chapterMatch[1]);
+                        const chTitle = chapterMatch[2] || '';
+                        
+                        currentChapterDetails = document.createElement('details');
+                        currentChapterDetails.className = 'reader-chapter-card';
+                        currentChapterDetails.id = `reader-chapter-${chNum}`;
+                        
+                        const summary = document.createElement('summary');
+                        summary.className = 'reader-chapter-summary';
+                        
+                        const summaryTitle = document.createElement('span');
+                        summaryTitle.className = 'chapter-summary-text';
+                        summaryTitle.textContent = `第 ${chNum} 章 ${chTitle}`;
+                        summary.appendChild(summaryTitle);
+                        
+                        currentChapterDetails.appendChild(summary);
+                        
+                        currentChapterBody = document.createElement('div');
+                        currentChapterBody.className = 'reader-chapter-body';
+                        currentChapterDetails.appendChild(currentChapterBody);
+                        
+                        detailReader.appendChild(currentChapterDetails);
+                    } else if (trimmed.startsWith('# ')) {
+                        flushParagraph();
+                        const h2 = document.createElement('h2');
+                        h2.textContent = trimmed.substring(2);
+                        detailReader.appendChild(h2);
+                        currentChapterDetails = null;
+                        currentChapterBody = null;
+                    } else if (trimmed === '---') {
+                        flushParagraph();
+                        if (!currentChapterDetails) {
+                            const hr = document.createElement('hr');
+                            detailReader.appendChild(hr);
+                        }
+                    } else if (trimmed === '') {
+                        flushParagraph();
+                    } else {
+                        currentParagraphLines.push(trimmed);
+                    }
+                });
+                flushParagraph();
+
+                if (detailReader.childNodes.length === 0) {
+                    detailReader.textContent = "小说手稿目前为空，请点击“启动管线”开始创作。";
+                } else if (targetChapterNum !== null) {
+                    const targetEl = document.getElementById(`reader-chapter-${targetChapterNum}`);
+                    if (targetEl) {
+                        targetEl.open = true; // Open collapsible card
+                        setTimeout(() => {
+                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            
+                            // Dynamic glowing focus highlight
+                            targetEl.style.boxShadow = '0 0 15px rgba(168, 85, 247, 0.4)';
+                            targetEl.style.borderColor = 'var(--secondary)';
+                            setTimeout(() => {
+                                targetEl.style.boxShadow = '';
+                                targetEl.style.borderColor = '';
+                            }, 2000);
+                        }, 100);
+                    }
+                }
+            } catch (err) {
+                detailReader.textContent = "读取手稿文本出错: " + err.message;
+            }
+        }
+
+        // Control Toggle (Play/Pause Action)
+        async function sendControlAction(projectId, action) {
+            try {
+                const res = await fetch(`/api/projects/${projectId}/control`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: action })
+                });
+                if (res.ok) {
+                    await loadProjectsList();
+                    loadProjectDetail(projectId);
+                }
+            } catch (err) {
+                console.error("Failed to post control action", err);
+            }
+        }
+
+        btnControlToggle.addEventListener('click', async () => {
+            if (!selectedProjectId) return;
+            // Check if active (running) currently
+            const proj = projectsList.find(p => p.id === selectedProjectId);
+            if (proj && proj.is_active) {
+                // Set local pausing state and render immediately for responsive feedback
+                projectPausingState[selectedProjectId] = true;
+                loadProjectDetail(selectedProjectId);
+                await sendControlAction(selectedProjectId, 'pause');
+            } else {
+                await sendControlAction(selectedProjectId, 'resume');
+            }
+        });
+
+        // Edit project configuration click
+        btnControlEdit.addEventListener('click', () => {
+            if (!selectedProjectId || !currentProjectData) return;
+            
+            // Fail close: if it's currently running, don't allow edits
+            if (currentProjectData.is_active) {
+                showConfirm('提示', '项目当前正在写作中，请先“暂停管线”再修改配置设定。', null);
+                return;
+            }
+            
+            isEditMode = true;
+            switchView('create');
+            
+            // Pre-fill inputs with current configuration
+            creatorPanelTitle.textContent = `修改小说配置设定 (${currentProjectData.config.title})`;
+            inputTitle.value = currentProjectData.config.title;
+            inputStyle.value = currentProjectData.config.style;
+            
+            inputChapters.value = currentProjectData.config.total_chapters;
+            valChapters.textContent = currentProjectData.config.total_chapters + ' 章';
+            
+            inputWords.value = currentProjectData.config.min_words;
+            valWords.textContent = currentProjectData.config.min_words + ' 字';
+            
+            inputOutline.value = currentProjectData.outline || '';
+            
+            // Show reset progress option
+            formGroupResetProgress.style.display = 'flex';
+            inputResetProgress.checked = false;
+            
+            btnCreateSubmit.textContent = "保存配置修改";
+        });
+
+        // Export project click
+        btnControlExport.addEventListener('click', () => {
+            if (selectedProjectId) {
+                window.location.href = `/api/projects/${selectedProjectId}/export`;
+            }
+        });
+
+        // Sidebar Collapse click
+        btnCollapseSidebar.addEventListener('click', () => {
+            document.body.classList.add('sidebar-collapsed');
+        });
+
+        // Sidebar Expand click
+        btnExpandSidebar.addEventListener('click', () => {
+            document.body.classList.remove('sidebar-collapsed');
+        });
+
+        // Expand / Collapse all chapters in reader view
+        btnReaderExpandAll.addEventListener('click', () => {
+            const chapters = detailReader.querySelectorAll('details.reader-chapter-card');
+            chapters.forEach(ch => ch.open = true);
+        });
+
+        btnReaderCollapseAll.addEventListener('click', () => {
+            const chapters = detailReader.querySelectorAll('details.reader-chapter-card');
+            chapters.forEach(ch => ch.open = false);
+        });
+
+        // Delete project click
+        btnControlDelete.addEventListener('click', () => {
+            if (!selectedProjectId) return;
+            showConfirm(
+                '确认删除小说项目',
+                '您确定要彻底删除该项目文件夹及其所有的任务队列、手稿文本和世界观记忆数据库吗？此操作无法恢复！',
+                async () => {
+                    try {
+                        const res = await fetch(`/api/projects/${selectedProjectId}/delete`, {
+                            method: 'POST'
+                        });
+                        if (res.ok) {
+                            switchView('welcome');
+                            await loadProjectsList();
+                        } else {
+                            const data = await res.json();
+                            showConfirm('删除失败', data.detail || '未知原因', null);
+                        }
+                    } catch (err) {
+                        showConfirm('删除失败', '网络连接错误', null);
+                    }
+                }
+            );
+        });
+
+        // Global Loop (Updates Sidebars + active details panels)
+        function startGlobalPolling() {
+            if (pollingTimer) clearInterval(pollingTimer);
+            pollingTimer = setInterval(async () => {
+                // Poll projects list
+                await loadProjectsList();
+                // If on details view, poll details + logs
+                if (currentView === 'detail' && selectedProjectId) {
+                    loadProjectDetail(selectedProjectId);
+                    loadProjectLogs(selectedProjectId);
+                }
+            }, 3000);
+        }
+
+        // Initial setup
+        fetchConfig();
+        loadProjectsList();
+        startGlobalPolling();
+    </script>
+</body>
+</html>
