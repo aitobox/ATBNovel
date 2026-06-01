@@ -133,6 +133,29 @@
             display: flex !important;
         }
 
+        #btn-collapse-sidebar {
+            background: rgba(168, 85, 247, 0.05);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            color: #c084fc;
+            border-radius: 0.5rem;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(168, 85, 247, 0.05);
+        }
+
+        #btn-collapse-sidebar:hover {
+            background: rgba(168, 85, 247, 0.15);
+            border-color: rgba(168, 85, 247, 0.4);
+            color: #d8b4fe;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
+        }
+
         .logo-icon {
             width: 2rem;
             height: 2rem;
@@ -954,6 +977,32 @@
             background: rgba(255, 255, 255, 0.03);
         }
 
+        /* Level-specific summaries */
+        .reader-chapter-card.level-1-card {
+            border-left: 3px solid var(--accent) !important;
+            background: rgba(236, 72, 153, 0.02) !important;
+        }
+        .reader-chapter-summary.level-1-summary {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #ec4899 !important;
+        }
+        .reader-chapter-card.level-1-card[open] > .reader-chapter-summary.level-1-summary::before {
+            color: var(--accent) !important;
+        }
+
+        .reader-chapter-card.level-2-card {
+            border-left: 3px solid var(--secondary) !important;
+        }
+        .reader-chapter-summary.level-2-summary {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #c084fc !important;
+        }
+        .reader-chapter-card.level-2-card[open] > .reader-chapter-summary.level-2-summary::before {
+            color: var(--secondary) !important;
+        }
+
         .reader-chapter-summary {
             padding: 1rem;
             font-size: 1.05rem;
@@ -1063,8 +1112,8 @@
             <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <span class="sidebar-title">小说项目列表</span>
-                    <button class="btn-toggle-sidebar" id="btn-collapse-sidebar" data-tooltip="收起项目列表" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.25rem; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="11 17 6 12 11 7"></polyline><line x1="18" y1="17" x2="18" y2="7"></line></svg>
+                    <button class="btn-toggle-sidebar" id="btn-collapse-sidebar" data-tooltip="收起项目列表">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="11 17 6 12 11 7"></polyline><line x1="18" y1="17" x2="18" y2="7"></line></svg>
                     </button>
                 </div>
                 <button class="btn-new" id="btn-show-create">
@@ -1952,40 +2001,17 @@
                 let currentChapterBody = null;
                 let currentParagraphLines = [];
 
-                function flushParagraph() {
-                    if (currentParagraphLines.length > 0) {
-                        const p = document.createElement('p');
-                        p.textContent = currentParagraphLines.join(' ');
-                        if (currentChapterBody) {
-                            currentChapterBody.appendChild(p);
-                        } else {
-                            detailReader.appendChild(p);
-                        }
-                        currentParagraphLines = [];
-                    }
-                }
-
-                lines.forEach(line => {
-                    const trimmed = line.trim();
-                    
-                    // Regex match: ## 第X章 [标题]
-                    const chapterMatch = trimmed.match(/^##\s*第\s*(\d+)\s*章\s*(.*)/);
-                    
-                    if (chapterMatch) {
-                        flushParagraph();
-                        const chNum = parseInt(chapterMatch[1]);
-                        const chTitle = chapterMatch[2] || '';
-                        
+                function ensureChapterBody() {
+                    if (!currentChapterBody) {
                         currentChapterDetails = document.createElement('details');
-                        currentChapterDetails.className = 'reader-chapter-card';
-                        currentChapterDetails.id = `reader-chapter-${chNum}`;
+                        currentChapterDetails.className = 'reader-chapter-card level-1-card';
                         
                         const summary = document.createElement('summary');
-                        summary.className = 'reader-chapter-summary';
+                        summary.className = 'reader-chapter-summary level-1-summary';
                         
                         const summaryTitle = document.createElement('span');
-                        summaryTitle.className = 'chapter-summary-text';
-                        summaryTitle.textContent = `第 ${chNum} 章 ${chTitle}`;
+                        summaryTitle.className = 'chapter-summary-text level-1-text';
+                        summaryTitle.textContent = '项目简介';
                         summary.appendChild(summaryTitle);
                         
                         currentChapterDetails.appendChild(summary);
@@ -1995,19 +2021,86 @@
                         currentChapterDetails.appendChild(currentChapterBody);
                         
                         detailReader.appendChild(currentChapterDetails);
-                    } else if (trimmed.startsWith('# ')) {
+                    }
+                }
+
+                function flushParagraph() {
+                    if (currentParagraphLines.length > 0) {
+                        const p = document.createElement('p');
+                        p.textContent = currentParagraphLines.join(' ');
+                        ensureChapterBody();
+                        currentChapterBody.appendChild(p);
+                        currentParagraphLines = [];
+                    }
+                }
+
+                lines.forEach(line => {
+                    const trimmed = line.trim();
+                    
+                    const h1Match = trimmed.match(/^#\s+(.*)/);
+                    const h2Match = trimmed.match(/^##\s+(.*)/);
+                    const h3Match = trimmed.match(/^###\s+(.*)/);
+                    
+                    if (h1Match) {
                         flushParagraph();
-                        const h2 = document.createElement('h2');
-                        h2.textContent = trimmed.substring(2);
-                        detailReader.appendChild(h2);
-                        currentChapterDetails = null;
-                        currentChapterBody = null;
+                        const title = h1Match[1];
+                        currentChapterDetails = document.createElement('details');
+                        currentChapterDetails.className = 'reader-chapter-card level-1-card';
+                        
+                        const summary = document.createElement('summary');
+                        summary.className = 'reader-chapter-summary level-1-summary';
+                        
+                        const summaryTitle = document.createElement('span');
+                        summaryTitle.className = 'chapter-summary-text level-1-text';
+                        summaryTitle.textContent = title;
+                        summary.appendChild(summaryTitle);
+                        
+                        currentChapterDetails.appendChild(summary);
+                        
+                        currentChapterBody = document.createElement('div');
+                        currentChapterBody.className = 'reader-chapter-body';
+                        currentChapterDetails.appendChild(currentChapterBody);
+                        
+                        detailReader.appendChild(currentChapterDetails);
+                    } else if (h2Match) {
+                        flushParagraph();
+                        const title = h2Match[1];
+                        currentChapterDetails = document.createElement('details');
+                        currentChapterDetails.className = 'reader-chapter-card level-2-card';
+                        
+                        // Parse chapter number if matches "第X章"
+                        const chMatch = title.match(/第\s*(\d+)\s*章/);
+                        if (chMatch) {
+                            const chNum = parseInt(chMatch[1]);
+                            currentChapterDetails.id = `reader-chapter-${chNum}`;
+                        }
+                        
+                        const summary = document.createElement('summary');
+                        summary.className = 'reader-chapter-summary level-2-summary';
+                        
+                        const summaryTitle = document.createElement('span');
+                        summaryTitle.className = 'chapter-summary-text level-2-text';
+                        summaryTitle.textContent = title;
+                        summary.appendChild(summaryTitle);
+                        
+                        currentChapterDetails.appendChild(summary);
+                        
+                        currentChapterBody = document.createElement('div');
+                        currentChapterBody.className = 'reader-chapter-body';
+                        currentChapterDetails.appendChild(currentChapterBody);
+                        
+                        detailReader.appendChild(currentChapterDetails);
+                    } else if (h3Match) {
+                        flushParagraph();
+                        const h3 = document.createElement('h3');
+                        h3.textContent = h3Match[1];
+                        ensureChapterBody();
+                        currentChapterBody.appendChild(h3);
                     } else if (trimmed === '---') {
                         flushParagraph();
-                        if (!currentChapterDetails) {
-                            const hr = document.createElement('hr');
-                            detailReader.appendChild(hr);
-                        }
+                        const hr = document.createElement('hr');
+                        ensureChapterBody();
+                        currentChapterBody.appendChild(hr);
                     } else if (trimmed === '') {
                         flushParagraph();
                     } else {
