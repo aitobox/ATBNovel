@@ -121,20 +121,57 @@ class NovelGenerator:
         other_chars = len(re.findall(r'[\u3000-\u303f\uff00-\uffef\d]+', text))
         return chinese_chars + english_words + other_chars
 
-    def clean_section_headers(self, text):
-        """Strip structural section headers like '第一部分：...', '第二部分...', etc."""
+    def clean_section_headers(self, text, chapter_num=None, title=None):
+        """Strip structural section headers, book titles, and redundant chapter headers from the text."""
         if not text:
             return text
-        pattern = re.compile(
+            
+        struct_pattern = re.compile(
             r'^\s*(#+\s*)?(第[一二三四五六七八九十]部分|第[0-9]+部分|Part\s*[0-9]+|场景[一二三四五]|第[一二三四五]幕|引子|场景|幕)\s*[:：\-\s\d]*.*$',
             re.IGNORECASE
         )
+        
+        h1_h2_pattern = re.compile(r'^\s*#{1,2}(\s+.*)?$')
+        
+        # Generic chapter header pattern (e.g., "第一章", "第1章", etc.)
+        plain_chapter_pattern = re.compile(
+            r'^\s*第\s*([0-9]+|[一二三四五六七八九十百千零]+)\s*[章回节幕说]((续|续一|续二|第二部分|第三部分)[\s\d]*)?[\s：:\-]*.*$',
+            re.IGNORECASE
+        )
+        
         lines = text.split('\n')
         cleaned_lines = []
         for line in lines:
-            if pattern.match(line.strip()):
+            s_line = line.strip()
+            if not s_line:
+                cleaned_lines.append(line)
                 continue
+                
+            # 1. Strip structural patterns
+            if struct_pattern.match(s_line):
+                continue
+                
+            # 2. Strip H1/H2 markdown headings
+            if h1_h2_pattern.match(s_line):
+                continue
+                
+            # 3. Strip plain chapter titles if they match chapter num/title context
+            is_redundant_header = False
+            
+            # If the line is short, check if it's a chapter header
+            if len(s_line) < 50:
+                if plain_chapter_pattern.match(s_line):
+                    is_redundant_header = True
+                elif title and title.strip("[]()（）【】") in s_line:
+                    is_redundant_header = True
+                elif chapter_num is not None and f"第{chapter_num}章" in s_line:
+                    is_redundant_header = True
+                    
+            if is_redundant_header:
+                continue
+                
             cleaned_lines.append(line)
+            
         return '\n'.join(cleaned_lines)
 
     def initialize_tasks_queue(self):
@@ -502,11 +539,13 @@ class NovelGenerator:
         part_3 = self.call_llm(prompt_p3, temperature=self.temperature).strip()
         
         full_text = f"{part_1}\n\n{part_2}\n\n{part_3}"
-        return self.clean_section_headers(full_text)
+        return self.clean_section_headers(full_text, chapter_num, title)
 
     def check_and_expand_chapter(self, chapter_text, chapter_task):
         """Check the word count, and expand the chapter dynamically if below limit."""
-        chapter_text = self.clean_section_headers(chapter_text)
+        chapter_num = chapter_task.get("chapter_num")
+        title = chapter_task.get("title")
+        chapter_text = self.clean_section_headers(chapter_text, chapter_num, title)
         word_count = self.count_words(chapter_text)
         if word_count >= self.min_words:
             return chapter_text, word_count
@@ -537,7 +576,7 @@ class NovelGenerator:
 """
             try:
                 chapter_text = self.call_llm(prompt, temperature=self.temperature + 0.05).strip()
-                chapter_text = self.clean_section_headers(chapter_text)
+                chapter_text = self.clean_section_headers(chapter_text, chapter_num, title)
                 word_count = self.count_words(chapter_text)
                 self.log(f"   Expansion attempt {attempts} finished. New word count: {word_count}.")
             except Exception as e:
@@ -712,7 +751,8 @@ class NovelGenerator:
                 
                 # 3. Append to master novel file
                 with open(self.novel_file, "a", encoding="utf-8") as f:
-                    f.write(f"## 第{chapter_num}章 [{title}]\n\n")
+                    clean_title = title.strip("[]()（）【】")
+                    f.write(f"## 第{chapter_num}章 {clean_title}\n\n")
                     f.write(final_text)
                     f.write("\n\n---\n\n")
                 self.log(f"💾 Chapter {chapter_num} written successfully to master_novel.md ({final_words} words).")
