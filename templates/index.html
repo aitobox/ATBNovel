@@ -275,6 +275,29 @@
             box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
         }
 
+        .style-tag-pill {
+            background: rgba(168, 85, 247, 0.05);
+            border: 1px solid rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .style-tag-pill:hover {
+            background: rgba(168, 85, 247, 0.15);
+            border-color: rgba(168, 85, 247, 0.35);
+            color: #d8b4fe;
+            transform: translateY(-1px);
+        }
+        .style-tag-pill.active-tag {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-color: transparent;
+            color: white;
+        }
+
         .project-list {
             display: flex;
             flex-direction: column;
@@ -1148,9 +1171,43 @@
                         <label for="input-title">小说名称</label>
                         <input type="text" id="input-title" placeholder="如：《逆流而上：最后的绿茵灵性》">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group full-width">
                         <label for="input-style">流派风格与风格笔触</label>
-                        <input type="text" id="input-style" placeholder="如：科幻/硬科幻 或 青春热血/中国底层足球小镇">
+                        <input type="text" id="input-style" placeholder="如：科幻/硬科幻 或 游戏/单女主/末世 (可点击下方标签快速添加)">
+                        <div class="style-tags-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
+                            <span class="style-tag-pill" onclick="toggleStyleTag('游戏', this)">游戏</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('单女主', this)">单女主</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('末世', this)">末世</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('搞笑', this)">搞笑</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('异能', this)">异能</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('同人', this)">同人</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('直播', this)">直播</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('诡异', this)">诡异</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('无限', this)">无限</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('扮演', this)">扮演</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('修仙', this)">修仙</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('无敌', this)">无敌</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('年代', this)">年代</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('谍战', this)">谍战</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('科技', this)">科技</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('进化', this)">进化</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('武侠', this)">武侠</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('悬疑', this)">悬疑</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('种田', this)">种田</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('西游', this)">西游</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('双男主', this)">双男主</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('无cp', this)">无cp</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('空间', this)">空间</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('古代', this)">古代</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('男主文', this)">男主文</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('团宠', this)">团宠</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('白月光', this)">白月光</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('万人迷', this)">万人迷</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('同人文', this)">同人文</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('校园', this)">校园</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('娱乐圈', this)">娱乐圈</span>
+                            <span class="style-tag-pill" onclick="toggleStyleTag('双强', this)">双强</span>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="input-chapters">规划章节总数</label>
@@ -1169,6 +1226,19 @@
                     <div class="form-group full-width">
                         <label for="input-outline">核心小说大纲 (支持 Markdown 格式描述)</label>
                         <textarea id="input-outline" class="outline-input" placeholder="请详细输入或粘贴小说总体的故事梗概、时代纪元划分或初始设定大纲，LLM会基于大纲对章节结构进行精准切分..."></textarea>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="input-ref-text">期望写作风格样板（可选，让系统学习您期望的文风与笔触）</label>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+                            <select id="select-ref-template" style="flex: 1; min-width: 200px; padding: 0.5rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--panel-border); color: var(--text-primary); border-radius: 0.5rem; outline: none; cursor: pointer;">
+                                <option value="">-- 选择样板风格（或直接在下方输入） --</option>
+                                <option value="gulong">古龙风格 - 《天涯·明月·刀》经典片段</option>
+                                <option value="jinyong">金庸风格 - 《射雕英雄传》经典叙事</option>
+                                <option value="zhangailing">张爱玲风格 - 《红玫瑰与白玫瑰》经典独白</option>
+                                <option value="luxun">鲁迅风格 - 《秋夜》经典环境铺垫</option>
+                            </select>
+                        </div>
+                        <textarea id="input-ref-text" class="outline-input" style="height: 120px; resize: vertical;" placeholder="可在此粘贴您自己写的或期望模仿的样板段落文字。系统创作正文时，会深度参考这段文字的语调、句式结构和情感张力..."></textarea>
                     </div>
                     <!-- Reset Progress Option (visible only during edit mode) -->
                     <div class="form-group full-width" id="form-group-reset-progress" style="display: none; flex-direction: row; align-items: center; gap: 0.75rem; background: rgba(239, 68, 68, 0.05); padding: 1rem; border-radius: 0.5rem; border: 1px dashed rgba(239, 68, 68, 0.2);">
@@ -1340,6 +1410,8 @@
         const inputWords = document.getElementById('input-words');
         const valWords = document.getElementById('val-words');
         const inputOutline = document.getElementById('input-outline');
+        const inputRefText = document.getElementById('input-ref-text');
+        const selectRefTemplate = document.getElementById('select-ref-template');
 
         // Detail Fields
         const detailTitle = document.getElementById('detail-proj-title');
@@ -1382,6 +1454,58 @@
             valWords.textContent = e.target.value + ' 字';
         });
 
+        // Style presets mapping
+        const PRESET_TEMPLATES = {
+            gulong: `　　（一）\n\n　　“天涯远不远？”\n　　“不远！”\n　　“人就在天涯，天涯怎么会远？”\n\n　　（二）\n\n　　“明月是什么颜色的？”\n　　“是蓝的，就像海一样蓝，一样深，一样忧郁。”\n　　“明月在哪里？”\n　　“就在他心里，他的心就是明月。”\n\n　　（三）\n\n　　“刀呢？”\n　　“刀就在他手里！”\n　　“那是柄什么样的刀？”\n　　“他的刀如天涯般辽阔寂寞，如明月般皎洁忧郁。有时一刀挥出，又仿佛是空的！”\n　　“空的？”\n　　“空空蒙蒙，缥缈虚幻，仿佛根本不存在，又仿佛到处都在。”\n　　“可是他的刀看来并不快。”\n　　“是的。”\n　　“不快的刀，怎么能无敌于天下？”\n　　“因为他的刀已超越了速度的极限！”\n\n　　（四）\n\n　　“他的人呢？”\n　　“人犹未归；人已断肠。”\n　　“何处是归程？”\n　　“归程就在他眼前。”\n　　“他看不见？”\n　　“他没有去看。”\n　　“所以他找不到？”\n　　“现在虽然找不到，迟早总有一天会找到的！”\n　　“一定会找到？”\n　　“一定！”`,
+            jinyong: `钱塘江浩浩江水，日日夜夜无穷无休的从临安牛家村边绕过，东流入海。江畔一排数十株乌柏树，叶子似火烧般红，正是八月天时。村前村后的野草刚起始变黄，一抹斜阳映照之下，更增了几分萧索。两株大松树下围着一堆村民，男男女女和十几个小孩，正自聚精会神的听着一个瘦削的老者说话。那说话人五十来岁年纪，一件青布长袍早洗得褪成了蓝灰色。只听他两片梨花木板碰了几下，左手中竹棒在一面小羯鼓上敲起得得连声。`,
+            zhangailing: `也许每一个男子全都有过这样的两个女人，至少两个。娶了红玫瑰，久而久之，红的变了墙上的一抹蚊子血，白的还是“床前明月光”；娶了白玫瑰，白的便是衣服上沾的一粒饭黏子，红的却是心口上一颗朱砂痣。`,
+            luxun: `在我的后园，可以看见墙外有两株树，一株是枣树，还有一株也是枣树。这夜的天空，奇怪而高，我生平没有见过这样奇怪而高的天空。他仿佛要离开人间而去，使人们仰面不再看见。`
+        };
+
+        // Select preset template listener
+        selectRefTemplate.addEventListener('change', (e) => {
+            const templateKey = e.target.value;
+            if (templateKey && PRESET_TEMPLATES[templateKey]) {
+                inputRefText.value = PRESET_TEMPLATES[templateKey];
+            } else {
+                inputRefText.value = '';
+            }
+        });
+
+        // Toggle tag pill selection
+        window.toggleStyleTag = function(tagText, pillElement) {
+            let currentTags = inputStyle.value.split('/')
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+            
+            const index = currentTags.indexOf(tagText);
+            if (index > -1) {
+                currentTags.splice(index, 1);
+                pillElement.classList.remove('active-tag');
+            } else {
+                currentTags.push(tagText);
+                pillElement.classList.add('active-tag');
+            }
+            inputStyle.value = currentTags.join('/');
+        };
+
+        // Sync style pills UI states to match input-style value
+        window.syncStylePills = function() {
+            let currentTags = inputStyle.value.split('/')
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+                
+            document.querySelectorAll('.style-tag-pill').forEach(pill => {
+                const tagText = pill.textContent.trim();
+                if (currentTags.includes(tagText)) {
+                    pill.classList.add('active-tag');
+                } else {
+                    pill.classList.remove('active-tag');
+                }
+            });
+        };
+        inputStyle.addEventListener('input', syncStylePills);
+
         // View Controller
         function switchView(viewName) {
             currentView = viewName;
@@ -1400,6 +1524,9 @@
                     inputTitle.value = '';
                     inputStyle.value = '';
                     inputOutline.value = '';
+                    inputRefText.value = '';
+                    selectRefTemplate.value = '';
+                    syncStylePills();
                     inputChapters.value = 100;
                     valChapters.textContent = '100 章';
                     inputWords.value = 3000;
@@ -1617,7 +1744,8 @@
                             min_words: minWords,
                             max_words: minWords + 2000,
                             style: style,
-                            reset_progress: inputResetProgress.checked
+                            reset_progress: inputResetProgress.checked,
+                            ref_text: inputRefText.value.trim()
                         })
                     });
 
@@ -1647,7 +1775,8 @@
                         total_chapters: totalChapters,
                         min_words: minWords,
                         max_words: minWords + 2000,
-                        style: style
+                        style: style,
+                        ref_text: inputRefText.value.trim()
                     })
                 });
 
@@ -2189,6 +2318,9 @@
             valWords.textContent = currentProjectData.config.min_words + ' 字';
             
             inputOutline.value = currentProjectData.outline || '';
+            inputRefText.value = currentProjectData.config.ref_text || '';
+            selectRefTemplate.value = '';
+            syncStylePills();
             
             // Show reset progress option
             formGroupResetProgress.style.display = 'flex';

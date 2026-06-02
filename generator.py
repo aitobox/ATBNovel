@@ -31,6 +31,7 @@ class NovelGenerator:
         self.style = self.config.get("style", "科幻/硬科幻")
         self.title = self.config.get("title", "未命名小说")
         self.temperature = float(self.config.get("temperature", 0.7))
+        self.ref_text = self.config.get("ref_text", "")
         
         # Create client
         if self.api_base:
@@ -453,6 +454,10 @@ class NovelGenerator:
         foreshadowing = chapter_task["foreshadowing"]
         summary = chapter_task["summary"]
         
+        ref_text_instruction = ""
+        if self.ref_text:
+            ref_text_instruction = f"\n【期望的写作风格与笔触样板】\n请模仿并匹配以下参考段落的语言风格、句式结构、节奏快慢和叙事张力进行创作：\n```\n{self.ref_text}\n```\n"
+
         self.log(f"   [Writing Part 1/3: Environment and Setup]...")
         prompt_p1 = f"""
 你是一位文笔细腻、擅长铺陈描写的小说家。你正在写一部史诗长篇网文《{self.title}》，风格属于：{self.style}。
@@ -476,7 +481,7 @@ class NovelGenerator:
 
 世界记忆设定：
 {json.dumps(memory, ensure_ascii=False, indent=2)}
-
+{ref_text_instruction}
 ---
 【写作规范】
 1. 每一章的正文必须极其扎实、细节丰富。为了达到厚度，我们将分三部分撰写。现在你只需撰写【第一部分：场景引入与氛围铺垫】（约占全章篇幅的三分之一）。
@@ -501,7 +506,7 @@ class NovelGenerator:
 ---
 {part_1}
 ---
-
+{ref_text_instruction}
 ---
 【写作规范】
 1. 接着第一部分的内容，继续撰写【第二部分：冲突爆发与多轮对话】（约占全章篇幅的三分之一）。
@@ -527,7 +532,7 @@ class NovelGenerator:
 
 {part_2}
 ---
-
+{ref_text_instruction}
 ---
 【写作规范】
 1. 接着前文，撰写【第三部分：冲突收尾与高潮余韵】（完成本章）。
@@ -552,6 +557,10 @@ class NovelGenerator:
             
         self.log(f"   ⚠️ Chapter {chapter_task['chapter_num']} word count is {word_count}, lower than target {self.min_words}. Initiating expansion loop...")
         
+        ref_text_instruction = ""
+        if self.ref_text:
+            ref_text_instruction = f"\n【期望的写作风格与笔触样板】\n请模仿并匹配以下参考段落的语言风格、句式结构、节奏快慢和叙事张力进行创作：\n```\n{self.ref_text}\n```\n"
+
         attempts = 0
         while word_count < self.min_words and attempts < 3:
             attempts += 1
@@ -566,7 +575,7 @@ class NovelGenerator:
 2. 拓展环境描写，引入多重感官体验（视觉、触觉、嗅觉、甚至空气的震颤、细微的尘埃、材质的温度）。
 3. 拓展人物的内心挣扎、对现状的权衡、或者联想到的回忆。
 4. 扩写关键对决或对话细节，让节奏更有张力。
-
+{ref_text_instruction}
 已有的正文内容：
 ---
 {chapter_text}

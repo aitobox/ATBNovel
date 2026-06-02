@@ -176,7 +176,8 @@ def create_project(
     min_words: int = Body(3000),
     max_words: int = Body(5000),
     style: str = Body("科幻"),
-    model_name: Optional[str] = Body(None)
+    model_name: Optional[str] = Body(None),
+    ref_text: Optional[str] = Body(None)
 ):
     """Receive configurations and outline and initialize folders."""
     # Generate clean ID slug using ASCII alphanumeric, underscores, and dashes only
@@ -203,6 +204,7 @@ def create_project(
         "max_words": max_words,
         "style": style,
         "model_name": model_name,
+        "ref_text": ref_text,
         "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
     }
     
@@ -221,7 +223,8 @@ def update_project_config(
     max_words: int = Body(5000),
     style: str = Body("科幻"),
     model_name: Optional[str] = Body(None),
-    reset_progress: bool = Body(False)
+    reset_progress: bool = Body(False),
+    ref_text: Optional[str] = Body(None)
 ):
     """Update project config and outline mid-way, with optional progress reset."""
     project_path = get_project_path(project_id)
@@ -255,6 +258,7 @@ def update_project_config(
         "max_words": max_words,
         "style": style,
         "model_name": model_name,
+        "ref_text": ref_text,
         "created_at": created_at,
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S")
     }
