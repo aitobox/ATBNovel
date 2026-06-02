@@ -23,11 +23,16 @@
 ### 2. 安装依赖库
 在项目根目录下，使用 `pip` 安装所需的全部核心依赖：
 ```bash
-pip install fastapi uvicorn openai python-dotenv
+pip install -r requirements.txt
 ```
 
 ### 3. 配置环境变量
 在项目根目录下创建一个 `.env` 配置文件，并配置您的 LLM API 密钥和相关参数(我们以接入deepseek为例)：
+
+```
+cp .env.example .env
+```
+
 ```ini
 # API 秘钥与接入地址配置
 OPENAI_API_KEY=your_openai_api_key_here
