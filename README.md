@@ -14,6 +14,10 @@
 
 ---
 
+## 🌟 花费
+
+deepseek-v4-flash 创作百万字小说/5元
+
 ## 🛠️ 环境部署与运行指南
 
 ### 1. 基础环境要求
@@ -59,7 +63,10 @@ docker build -t aitobox/atb-novel:latest .
 ```
 
 #### B. 运行容器
-使用以下命令启动 Docker 容器：
+
+1.  `cp .env.example .env`， 填入自己的KEY
+
+2. 使用以下命令启动 Docker 容器：
 ```bash
 docker run -d \
   -p 8000:8000 \
