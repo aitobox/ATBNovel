@@ -34,6 +34,11 @@ deepseek-v4-flash 创作百万字小说/5元
 - **操作系统**：Linux / macOS / Windows
 - **运行环境**：Python 3.8 及以上版本
 
+```bash
+git clone https://github.com/aitobox/ATBNovel.git
+cd ATBNovel
+```
+
 ### 2. 安装依赖库
 在项目根目录下，使用 `pip` 安装所需的全部核心依赖：
 ```bash
@@ -79,9 +84,22 @@ uvicorn app:app --host 127.0.0.1 --port 8000 --reload
 本项目支持一键进行 Docker 部署。通过挂载 `projects` 目录，可以确保容器重启后生成的小说手稿与记忆库不丢失。
 
 ### 1. 构建镜像
+
+```bash
+git clone https://github.com/aitobox/ATBNovel.git
+cd ATBNovel
+```
+
+
 在项目根目录下执行以下命令构建 Docker 镜像：
 ```bash
 docker build -t aitobox/atb-novel:latest .
+```
+
+或者直接下载我们已经构建好的镜像:
+
+```
+docker pull aitobox/atb-novel:latest
 ```
 
 ### 2. 运行容器
