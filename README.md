@@ -38,13 +38,24 @@ cp .env.example .env
 ```
 
 ```ini
-# API 秘钥与接入地址配置
+# 默认/首选模型配置 (不带任何引号，支持用英文逗号分隔配置多个模型)
 OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_API_BASE=https://api.deepseek.com
+OPENAI_MODEL_NAME=deepseek-chat,deepseek-coder
 
-# 模型名称
-OPENAI_MODEL_NAME=deepseek-v4-flash
+# 支持配置多个额外模型，供 Web 界面选择 (可选，亦支持英文逗号分隔)
+MODEL_1_NAME=gpt-4o,gpt-4-turbo,gpt-3.5-turbo
+MODEL_1_API_KEY=sk-xxxxxx
+MODEL_1_API_BASE=https://api.openai.com/v1
+
+MODEL_2_NAME=claude-3-5-sonnet
+MODEL_2_API_KEY=sk-yyyyyy
+MODEL_2_API_BASE=https://api.anthropic.com/v1
 ```
+
+> [!WARNING]
+> 在配置 `.env` 文件时，请勿在键值两侧加任何单引号或双引号（例如用 `OPENAI_API_KEY=sk-...` 代替 `OPENAI_API_KEY="sk-..."`）。Docker 容器在加载环境参数时，会将引号本身作为 API 密钥的一部分读取，从而导致 401 认证失败。
+
 
 ### 4. 本地源码运行
 执行以下命令启动 Web 管理平台：

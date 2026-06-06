@@ -1171,6 +1171,12 @@
                         <label for="input-title">小说名称</label>
                         <input type="text" id="input-title" placeholder="如：《逆流而上：最后的绿茵灵性》">
                     </div>
+                    <div class="form-group">
+                        <label for="select-model">选择大语言模型 (LLM)</label>
+                        <select id="select-model" style="padding: 0.5rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--panel-border); color: var(--text-primary); border-radius: 0.5rem; outline: none; width: 100%; height: 42px; cursor: pointer;">
+                            <!-- Dynamically populated -->
+                        </select>
+                    </div>
                     <div class="form-group full-width">
                         <label for="input-style">流派风格与风格笔触</label>
                         <input type="text" id="input-style" placeholder="如：科幻/硬科幻 或 游戏/单女主/末世 (可点击下方标签快速添加)">
@@ -1404,6 +1410,7 @@
 
         // Form fields
         const inputTitle = document.getElementById('input-title');
+        const selectModel = document.getElementById('select-model');
         const inputStyle = document.getElementById('input-style');
         const inputChapters = document.getElementById('input-chapters');
         const valChapters = document.getElementById('val-chapters');
@@ -1522,6 +1529,11 @@
                     selectedProjectId = null;
                     // Reset fields
                     inputTitle.value = '';
+                    if (availableModels.length > 0) {
+                        selectModel.value = availableModels[0];
+                    } else {
+                        selectModel.value = '';
+                    }
                     inputStyle.value = '';
                     inputOutline.value = '';
                     inputRefText.value = '';
@@ -1593,13 +1605,30 @@
             if (deleteCallback) deleteCallback();
         });
 
+        let availableModels = [];
+
         // Fetch Global Config
         async function fetchConfig() {
             try {
                 const res = await fetch('/api/config');
                 if (res.ok) {
                     const data = await res.json();
-                    envBadge.textContent = '模型: ' + data.model_name;
+                    availableModels = data.model_names || [];
+                    
+                    // Populate select-model dropdown
+                    selectModel.innerHTML = '';
+                    availableModels.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m;
+                        opt.textContent = m;
+                        selectModel.appendChild(opt);
+                    });
+                    
+                    if (availableModels.length > 0) {
+                        envBadge.textContent = '可用模型: ' + availableModels.join(', ');
+                    } else {
+                        envBadge.textContent = '模型: 未配置';
+                    }
                 } else {
                     envBadge.textContent = '无法获取服务端状态';
                 }
@@ -1725,6 +1754,7 @@
             const outline = inputOutline.value.trim();
             const totalChapters = parseInt(inputChapters.value);
             const minWords = parseInt(inputWords.value);
+            const modelName = selectModel.value;
 
             if (!title || !style || !outline) {
                 showConfirm('提示', '请完整填入小说标题、风格流派大纲信息。', null);
@@ -1745,7 +1775,8 @@
                             max_words: minWords + 2000,
                             style: style,
                             reset_progress: inputResetProgress.checked,
-                            ref_text: inputRefText.value.trim()
+                            ref_text: inputRefText.value.trim(),
+                            model_name: modelName
                         })
                     });
 
@@ -1776,7 +1807,8 @@
                         min_words: minWords,
                         max_words: minWords + 2000,
                         style: style,
-                        ref_text: inputRefText.value.trim()
+                        ref_text: inputRefText.value.trim(),
+                        model_name: modelName
                     })
                 });
 
@@ -1823,7 +1855,7 @@
                 
                 // Update Title
                 detailTitle.textContent = data.config.title || projectId;
-                detailSubtitle.textContent = `风格流派: ${data.config.style} | 单章字数指标: ${data.config.min_words}字 | 创建时间: ${data.config.created_at || '--'}`;
+                detailSubtitle.textContent = `风格流派: ${data.config.style} | 模型: ${data.config.model_name || '默认'} | 单章字数指标: ${data.config.min_words}字 | 创建时间: ${data.config.created_at || '--'}`;
                 
                 // Clear pausing state if the project is no longer active in the backend
                 if (projectPausingState[projectId] && !data.is_active) {
@@ -2320,6 +2352,7 @@
             inputOutline.value = currentProjectData.outline || '';
             inputRefText.value = currentProjectData.config.ref_text || '';
             selectRefTemplate.value = '';
+            selectModel.value = currentProjectData.config.model_name || (availableModels.length > 0 ? availableModels[0] : '');
             syncStylePills();
             
             // Show reset progress option

@@ -19,6 +19,45 @@ from generator import NovelGenerator
 # Load env variables
 load_dotenv()
 
+def load_model_configs():
+    configs = []
+    seen_names = set()
+    
+    def add_configs(names_str, key, base):
+        if not names_str or not key:
+            return
+        # Split by comma to support multiple models on the same channel/base
+        names = [n.strip().strip("'\"") for n in names_str.split(",")]
+        key = key.strip("'\"")
+        base = base.strip("'\"") if base else None
+        
+        for name in names:
+            if name and name not in seen_names:
+                seen_names.add(name)
+                configs.append({
+                    "name": name,
+                    "api_key": key,
+                    "api_base": base
+                })
+            
+    # Try default first
+    default_name = os.environ.get("OPENAI_MODEL_NAME", "deepseek-v4-flash")
+    default_key = os.environ.get("OPENAI_API_KEY")
+    default_base = os.environ.get("OPENAI_API_BASE")
+    if default_key:
+        add_configs(default_name, default_key, default_base)
+    
+    # Scan for MODEL_N_NAME, MODEL_N_API_KEY, MODEL_N_API_BASE
+    for i in range(1, 100):
+        name = os.environ.get(f"MODEL_{i}_NAME")
+        key = os.environ.get(f"MODEL_{i}_API_KEY")
+        base = os.environ.get(f"MODEL_{i}_API_BASE")
+        if name and key:
+            add_configs(name, key, base)
+            
+    return configs
+
+
 app = FastAPI(title="ATBNovel Web Management Platform")
 
 # Configure CORS
@@ -54,25 +93,40 @@ def get_project_path(project_id: str) -> str:
 
 def run_project_generation(project_id: str, project_path: str, config: dict):
     """Target function for background thread execution."""
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if api_key:
-        api_key = api_key.strip("'\"")
-    api_base = os.environ.get("OPENAI_API_BASE")
-    if api_base:
-        api_base = api_base.strip("'\"")
+    configs = load_model_configs()
+    selected_model = config.get("model_name")
     
-    # Check if override model exists, otherwise get from environment
-    model_name = config.get("model_name") or os.environ.get("OPENAI_MODEL_NAME", "deepseek-v4-flash")
-    if model_name:
-        model_name = model_name.strip("'\"")
-    
-    if not api_key:
-        # Fallback query file or error out (fail-close)
-        # We will attempt to write error log
+    matched_config = None
+    if selected_model:
+        for cfg in configs:
+            if cfg["name"] == selected_model:
+                matched_config = cfg
+                break
+                
+    if not matched_config and configs:
+        matched_config = configs[0]
+        
+    if not matched_config:
+        # Fallback to general environment variables if load_model_configs didn't produce anything
+        api_key = os.environ.get("OPENAI_API_KEY")
+        api_base = os.environ.get("OPENAI_API_BASE")
+        model_name = os.environ.get("OPENAI_MODEL_NAME", "deepseek-v4-flash")
+        if api_key:
+            matched_config = {
+                "name": model_name.strip("'\"") if model_name else "deepseek-v4-flash",
+                "api_key": api_key.strip("'\""),
+                "api_base": api_base.strip("'\"") if api_base else None
+            }
+            
+    if not matched_config:
         log_file = os.path.join(project_path, "generation.log")
         with open(log_file, "a", encoding="utf-8") as f:
-            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ❌ FATAL: OPENAI_API_KEY is not set.\n")
+            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ❌ FATAL: No valid model configuration found.\n")
         return
+
+    api_key = matched_config["api_key"]
+    api_base = matched_config["api_base"]
+    model_name = matched_config["name"]
 
     # Instantiate generator
     generator = NovelGenerator(
@@ -120,15 +174,11 @@ def read_root():
 @app.get("/api/config")
 def get_global_config():
     """Expose non-sensitive configuration parameters to the client dashboard."""
-    model_name = os.environ.get("OPENAI_MODEL_NAME", "deepseek-v4-flash")
-    api_base = os.environ.get("OPENAI_API_BASE", "http://192.168.100.170:3000/v1")
-    if model_name:
-        model_name = model_name.strip("'\"")
-    if api_base:
-        api_base = api_base.strip("'\"")
+    configs = load_model_configs()
+    model_names = [cfg["name"] for cfg in configs]
     return {
-        "model_name": model_name,
-        "api_base": api_base
+        "model_names": model_names,
+        "model_name": model_names[0] if model_names else "deepseek-v4-flash"
     }
 
 @app.get("/api/projects")
