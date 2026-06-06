@@ -30,7 +30,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-PROJECTS_DIR = os.path.abspath("/opt/aitobox/ATBNovel/projects")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECTS_DIR = os.path.abspath(os.path.join(BASE_DIR, "projects"))
 if not os.path.exists(PROJECTS_DIR):
     os.makedirs(PROJECTS_DIR, exist_ok=True)
 
@@ -54,10 +55,16 @@ def get_project_path(project_id: str) -> str:
 def run_project_generation(project_id: str, project_path: str, config: dict):
     """Target function for background thread execution."""
     api_key = os.environ.get("OPENAI_API_KEY")
+    if api_key:
+        api_key = api_key.strip("'\"")
     api_base = os.environ.get("OPENAI_API_BASE")
+    if api_base:
+        api_base = api_base.strip("'\"")
     
     # Check if override model exists, otherwise get from environment
     model_name = config.get("model_name") or os.environ.get("OPENAI_MODEL_NAME", "deepseek-v4-flash")
+    if model_name:
+        model_name = model_name.strip("'\"")
     
     if not api_key:
         # Fallback query file or error out (fail-close)
@@ -103,7 +110,7 @@ def run_project_generation(project_id: str, project_path: str, config: dict):
 @app.get("/", response_class=HTMLResponse)
 def read_root():
     """Serve the main frontend application file."""
-    template_path = os.path.abspath("/opt/aitobox/ATBNovel/templates/index.html")
+    template_path = os.path.abspath(os.path.join(BASE_DIR, "templates", "index.html"))
     if not os.path.exists(template_path):
         raise HTTPException(status_code=404, detail="Index template not found.")
     with open(template_path, "r", encoding="utf-8") as f:
@@ -113,9 +120,15 @@ def read_root():
 @app.get("/api/config")
 def get_global_config():
     """Expose non-sensitive configuration parameters to the client dashboard."""
+    model_name = os.environ.get("OPENAI_MODEL_NAME", "deepseek-v4-flash")
+    api_base = os.environ.get("OPENAI_API_BASE", "http://192.168.100.170:3000/v1")
+    if model_name:
+        model_name = model_name.strip("'\"")
+    if api_base:
+        api_base = api_base.strip("'\"")
     return {
-        "model_name": os.environ.get("OPENAI_MODEL_NAME", "deepseek-v4-flash"),
-        "api_base": os.environ.get("OPENAI_API_BASE", "http://192.168.100.170:3000/v1")
+        "model_name": model_name,
+        "api_base": api_base
     }
 
 @app.get("/api/projects")
