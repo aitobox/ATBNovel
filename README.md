@@ -18,6 +18,16 @@
 
 deepseek-v4-flash 创作百万字小说/5元
 
+## 截图
+
+<div align="center">
+  <img src="docs/images/atbnovel0.png" width="50%" alt="小说创建">
+</div>
+
+<div align="center">
+  <img src="docs/images/atbnovel1.png" width="50%" alt="小说撰写">
+</div>
+
 ## 🛠️ 本地环境部署与运行指南
 
 ### 1. 基础环境要求
