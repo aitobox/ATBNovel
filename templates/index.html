@@ -179,6 +179,7 @@
         }
 
         .env-badge {
+            position: relative;
             font-size: 0.75rem;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
@@ -188,6 +189,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            cursor: pointer;
         }
 
         .env-badge::before {
@@ -198,6 +200,43 @@
             border-radius: 50%;
             background: var(--success);
             box-shadow: 0 0 8px var(--success);
+        }
+
+        .env-badge .tooltip-content {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: max-content;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            z-index: 999;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            text-align: left;
+            pointer-events: none;
+        }
+
+        .env-badge:hover .tooltip-content {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .env-badge .tooltip-content::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            right: 20px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: transparent transparent var(--panel-border) transparent;
         }
 
         /* Workspace Layout */
@@ -1120,7 +1159,10 @@
             <div class="logo-icon">ATB</div>
             <div class="logo-text">ATBNovel</div>
         </div>
-        <div id="env-badge" class="env-badge">加载配置中...</div>
+        <div id="env-badge" class="env-badge">
+            <span id="env-badge-text">加载配置中...</span>
+            <div id="env-badge-tooltip" class="tooltip-content">加载中...</div>
+        </div>
     </header>
 
     <!-- Workspace -->
@@ -1624,16 +1666,36 @@
                         selectModel.appendChild(opt);
                     });
                     
+                    const envBadgeText = document.getElementById('env-badge-text');
+                    const envBadgeTooltip = document.getElementById('env-badge-tooltip');
+                    
                     if (availableModels.length > 0) {
-                        envBadge.textContent = '可用模型: ' + availableModels.join(', ');
+                        const firstModel = availableModels[0];
+                        if (availableModels.length > 1) {
+                            if (envBadgeText) envBadgeText.textContent = `可用模型: ${firstModel} (+${availableModels.length - 1})`;
+                        } else {
+                            if (envBadgeText) envBadgeText.textContent = `可用模型: ${firstModel}`;
+                        }
+                        
+                        if (envBadgeTooltip) {
+                            envBadgeTooltip.innerHTML = `
+                                <div style="font-weight: 600; margin-bottom: 0.5rem; color: #818cf8; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.25rem; white-space: nowrap;">已配置模型列表</div>
+                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                    ${availableModels.map(m => `<li style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.25rem; white-space: nowrap;"><span style="color: var(--success); font-size: 0.6rem;">●</span> ${m}</li>`).join('')}
+                                </ul>
+                            `;
+                        }
                     } else {
-                        envBadge.textContent = '模型: 未配置';
+                        if (envBadgeText) envBadgeText.textContent = '模型: 未配置';
+                        if (envBadgeTooltip) envBadgeTooltip.innerHTML = '暂无已配置的模型';
                     }
                 } else {
-                    envBadge.textContent = '无法获取服务端状态';
+                    const envBadgeText = document.getElementById('env-badge-text');
+                    if (envBadgeText) envBadgeText.textContent = '无法获取服务端状态';
                 }
             } catch (err) {
-                envBadge.textContent = '通信错误';
+                const envBadgeText = document.getElementById('env-badge-text');
+                if (envBadgeText) envBadgeText.textContent = '通信错误';
             }
         }
 

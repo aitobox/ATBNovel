@@ -111,9 +111,13 @@ def run_project_generation(project_id: str, project_path: str, config: dict):
         api_key = os.environ.get("OPENAI_API_KEY")
         api_base = os.environ.get("OPENAI_API_BASE")
         model_name = os.environ.get("OPENAI_MODEL_NAME", "deepseek-v4-flash")
+        if model_name:
+            model_name = [n.strip().strip("'\"") for n in model_name.split(",")][0]
+        else:
+            model_name = "deepseek-v4-flash"
         if api_key:
             matched_config = {
-                "name": model_name.strip("'\"") if model_name else "deepseek-v4-flash",
+                "name": model_name,
                 "api_key": api_key.strip("'\""),
                 "api_base": api_base.strip("'\"") if api_base else None
             }
