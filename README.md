@@ -18,7 +18,7 @@
 
 deepseek-v4-flash 创作百万字小说/5元
 
-## 🛠️ 环境部署与运行指南
+## 🛠️ 本地环境部署与运行指南
 
 ### 1. 基础环境要求
 - **操作系统**：Linux / macOS / Windows
@@ -53,17 +53,17 @@ uvicorn app:app --host 127.0.0.1 --port 8000 --reload
 ```
 启动成功后，在浏览器中访问：`http://127.0.0.1:8000` 即可进入控制台。
 
-### 5. Docker 容器化部署 (推荐)
+## 🛠️ Docker 容器化部署 (推荐)
+
 本项目支持一键进行 Docker 部署。通过挂载 `projects` 目录，可以确保容器重启后生成的小说手稿与记忆库不丢失。
 
-#### A. 构建镜像
+### 1. 构建镜像
 在项目根目录下执行以下命令构建 Docker 镜像：
 ```bash
 docker build -t aitobox/atb-novel:latest .
 ```
 
-#### B. 运行容器
-
+### 2. 运行容器
 1.  `cp .env.example .env`， 填入自己的KEY
 
 2. 使用以下命令启动 Docker 容器：
@@ -128,6 +128,8 @@ docker run -d \
 ## 📖 经典实例项目：《神座之上：欺诈者传奇》
 
 为了帮助开发者和创作者快速上手，平台内置了以 Faker（李相赫）为原型的经典实例项目——**《神座之上：欺诈者传奇》**。该项目演示了如何将流派设定、古龙期望风格以及详实的分卷大纲，输入平台并驱动 AI 进行生成创作。
+
+请到 [项目WIKI](https://github.com/aitobox/ATBNovel/wiki) 阅读
 
 ### 1. 实例项目配置 (`config.json`)
 ```json
