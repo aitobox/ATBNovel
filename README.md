@@ -42,12 +42,37 @@ OPENAI_API_BASE=https://api.deepseek.com
 OPENAI_MODEL_NAME=deepseek-v4-flash
 ```
 
-### 4. 运行服务
+### 4. 本地源码运行
 执行以下命令启动 Web 管理平台：
 ```bash
-uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app:app --host 127.0.0.1 --port 8000 --reload
 ```
-启动成功后，在浏览器中访问：`http://server_ip:8000` 即可进入控制台。
+启动成功后，在浏览器中访问：`http://127.0.0.1:8000` 即可进入控制台。
+
+### 5. Docker 容器化部署 (推荐)
+本项目支持一键进行 Docker 部署。通过挂载 `projects` 目录，可以确保容器重启后生成的小说手稿与记忆库不丢失。
+
+#### A. 构建镜像
+在项目根目录下执行以下命令构建 Docker 镜像：
+```bash
+docker build -t aitobox/atb-novel:latest .
+```
+
+#### B. 运行容器
+使用以下命令启动 Docker 容器：
+```bash
+docker run -d \
+  -p 8000:8000 \
+  --name atb-novel-factory \
+  -v $(pwd)/projects:/app/projects \
+  --env-file .env \
+  aitobox/atb-novel:latest
+```
+
+*说明：*
+- `-p 8000:8000`：将主机的 8000 端口映射到容器的 8000 端口。
+- `-v $(pwd)/projects:/app/projects`：将宿主机当前目录下的 `projects/` 文件夹挂载到容器内，保证小说项目数据持久化。
+- `--env-file .env`：直接读取宿主机上的环境变量配置文件（包含您的 API 秘钥配置）。
 
 ---
 

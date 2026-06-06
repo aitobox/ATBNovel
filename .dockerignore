@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env
+__pycache__/
+*.pyc
+projects/
+.gemini/
+*.log
+Dockerfile
+.dockerignore
+requirements.txt
