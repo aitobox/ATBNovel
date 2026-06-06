@@ -8,4 +8,3 @@ projects/
 *.log
 Dockerfile
 .dockerignore
-requirements.txt
