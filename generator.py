@@ -9,6 +9,10 @@ import random
 import traceback
 from openai import OpenAI
 
+class GenerationPausedException(Exception):
+    """Custom exception raised when generation is paused mid-chapter."""
+    pass
+
 class NovelGenerator:
     def __init__(self, project_path, api_key, api_base, model_name, config=None):
         self.project_path = project_path
@@ -49,10 +53,17 @@ class NovelGenerator:
         except Exception as e:
             print(f"Error writing log: {e}")
             
+    def check_abort(self):
+        """Check if pause is requested and raise GenerationPausedException."""
+        if hasattr(self, "check_stop_callback") and self.check_stop_callback and self.check_stop_callback():
+            raise GenerationPausedException("Generation paused cooperatively.")
+
     def call_llm(self, prompt, temperature=0.7, max_tokens=None, max_retries=6):
         """Call LLM with exponential backoff on failure."""
+        self.check_abort()
         messages = [{"role": "user", "content": prompt}]
         for attempt in range(max_retries):
+            self.check_abort()
             try:
                 # Add optional max_tokens if supported, otherwise let it default
                 kwargs = {
@@ -734,6 +745,7 @@ class NovelGenerator:
 
     def run_loop(self, check_stop_callback=None):
         """Execute the novel writing pipeline loop. Calls check_stop_callback() to support pause."""
+        self.check_stop_callback = check_stop_callback
         self.log(f"Starting novel generation loop for project: {self.title}")
         
         # 1. Initialize folders and files
@@ -868,6 +880,12 @@ class NovelGenerator:
                 # Cool down
                 time.sleep(1.5)
                 
+            except GenerationPausedException:
+                self.log("Generation paused cooperatively by backend manager (mid-chapter).")
+                task["status"] = "pending"
+                with open(self.queue_file, "w", encoding="utf-8") as f:
+                    json.dump(tasks_queue, f, ensure_ascii=False, indent=2)
+                return False
             except Exception as e:
                 self.log(f"❌ Error writing chapter {chapter_num}: {e}")
                 self.log(traceback.format_exc())
