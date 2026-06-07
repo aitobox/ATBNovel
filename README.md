@@ -16,7 +16,19 @@
 
 ## 🌟 花费
 
-deepseek-v4-flash 创作百万字小说/5元
+对比gemini-3.5-flash, deepseek=v4-flash, glm-5.1
+
+* gemini适合短篇创作，deepseek适合长篇创作
+
+* gemini细节丰富，但是长篇小说的场景会出现衔接问题，人物性格也有时候会偏移，而deepseek适合长篇创作，对于细节描写稍逊
+
+* glm-5.1对于风格匹配非常好，适用于指定模版风格的作品
+
+* gemini成本是deepseek 10倍以上
+
+* deepseek-v4-flash 创作百万字小说/5元-10元
+
+* gemini-3.5-flash 创作百万字小说/300元-600元
 
 ## 截图
 

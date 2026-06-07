@@ -444,7 +444,7 @@ class NovelGenerator:
         recent.reverse()
         return "\n".join(recent) if recent else "这是小说的开篇第一章。"
 
-    def write_chapter_in_parts(self, chapter_task, recent_context, memory):
+    def write_chapter_in_parts(self, chapter_task, recent_context, memory, previous_chapter_ending=""):
         """Write the chapter in parts (scenes) to ensure length, depth and dialogue."""
         chapter_num = chapter_task["chapter_num"]
         title = chapter_task["title"]
@@ -457,6 +457,19 @@ class NovelGenerator:
         ref_text_instruction = ""
         if self.ref_text:
             ref_text_instruction = f"\n【期望的写作风格与笔触样板】\n请模仿并匹配以下参考段落的语言风格、句式结构、节奏快慢和叙事张力进行创作：\n```\n{self.ref_text}\n```\n"
+
+        prev_ending_instruction = ""
+        if previous_chapter_ending:
+            prev_ending_instruction = f"""
+【前一章结尾原文参考】
+以下是上一章（第 {chapter_num - 1} 章）结尾的最后几百字原文：
+```
+{previous_chapter_ending}
+```
+请务必做到：
+- 完美衔接上一章结尾的场景、动作和人物状态。如果发生了时间或空间转移，请通过自然、流畅的文学描写进行“场景转换”（例如使用交代天气、环境变化、人物行进途中的过渡性叙述），绝对避免出现生硬的直接跳跃或场景错乱。
+- 确保主角所处的具体物理位置（如庙宇、荒山、城市等）和正在发生的动作逻辑完全连贯。
+"""
 
         self.log(f"   [Writing Part 1/3: Environment and Setup]...")
         prompt_p1 = f"""
@@ -478,6 +491,7 @@ class NovelGenerator:
 
 前情提要：
 {recent_context}
+{prev_ending_instruction}
 
 世界记忆设定：
 {json.dumps(memory, ensure_ascii=False, indent=2)}
@@ -750,9 +764,34 @@ class NovelGenerator:
             # Fetch recent context summaries
             recent_context = self.get_recent_summaries(tasks_queue, idx, count=3)
             
+            # Fetch previous chapter ending text for seamless transitions
+            previous_chapter_ending = ""
+            if chapter_num > 1:
+                prev_file = os.path.join(self.project_path, "docs", f"chapter_{chapter_num - 1}.txt")
+                if os.path.exists(prev_file):
+                    try:
+                        with open(prev_file, "r", encoding="utf-8") as f:
+                            prev_text = f.read().strip()
+                        previous_chapter_ending = prev_text[-1000:]
+                    except Exception as e:
+                        self.log(f"   ⚠️ Failed to read previous chapter file: {e}")
+                
+                if not previous_chapter_ending and os.path.exists(self.novel_file):
+                    try:
+                        with open(self.novel_file, "r", encoding="utf-8") as f:
+                            novel_content = f.read()
+                        search_marker = f"## 第{chapter_num - 1}章"
+                        if search_marker in novel_content:
+                            parts = novel_content.split(search_marker)
+                            if len(parts) > 1:
+                                prev_chapter_part = parts[-1].split("---")[0].strip()
+                                previous_chapter_ending = prev_chapter_part[-1000:]
+                    except Exception as e:
+                        self.log(f"   ⚠️ Failed to extract previous chapter ending from master_novel: {e}")
+            
             try:
                 # 1. Write initial text
-                draft_text = self.write_chapter_in_parts(task, recent_context, world_memory)
+                draft_text = self.write_chapter_in_parts(task, recent_context, world_memory, previous_chapter_ending=previous_chapter_ending)
                 time.sleep(1)
                 
                 # 2. Expand if too short
@@ -765,6 +804,14 @@ class NovelGenerator:
                     f.write(final_text)
                     f.write("\n\n---\n\n")
                 self.log(f"💾 Chapter {chapter_num} written successfully to master_novel.md ({final_words} words).")
+                
+                # Also save to individual chapter file for seamless transition references
+                try:
+                    chapter_file = os.path.join(self.project_path, "docs", f"chapter_{chapter_num}.txt")
+                    with open(chapter_file, "w", encoding="utf-8") as f:
+                        f.write(final_text)
+                except Exception as e:
+                    self.log(f"   ⚠️ Failed to save individual chapter file: {e}")
                 
                 # 4. Update memory
                 world_memory = self.update_world_memory(chapter_num, title, final_text, world_memory)
