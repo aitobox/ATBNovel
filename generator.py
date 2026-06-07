@@ -375,7 +375,7 @@ class NovelGenerator:
 ---
 
 请提取以下内容：
-1. `characters`: 主要出场的几位核心角色。包括他们的：status (当前状态，如隐居、在逃、在校等)、location (所在位置)、emotion (情感状态与态度)、description (性格特征和背景背景，约50字)。
+1. `characters`: 主要出场的几位核心角色。包括他们的：status (当前状态，如隐居、在逃、在校等)、location (所在位置)、emotion (情感状态与态度)、personality (性格特征和目前的心智成长状态)、description (背景描述，约50字)。
 2. `items`: 主要的核心道具、技术或装备。包括：location (位置/持有者)、status (状态描述)。
 3. `relationships`: 核心角色之间的初始关系（如 顾远与林策 -> 对立与防备）。
 4. `plot_threads`: 初始就存在的剧情线或需要解决悬念列表（列表格式）。
@@ -387,7 +387,8 @@ class NovelGenerator:
       "status": "当前状态",
       "location": "所处位置",
       "emotion": "情感线状态",
-      "description": "背景与性格描写"
+      "personality": "性格特征及心智阶段状态",
+      "description": "背景描述"
     }}
   }},
   "items": {{
@@ -402,6 +403,9 @@ class NovelGenerator:
   "plot_threads": [
     "剧情线1/待解决悬念",
     "剧情线2"
+  ],
+  "completed_milestones": [
+    "已发生的核心剧情里程碑/事件纪录"
   ]
 }}
 
@@ -426,7 +430,8 @@ class NovelGenerator:
                 "characters": {},
                 "items": {},
                 "relationships": {},
-                "plot_threads": ["推进故事主线，解开大纲中的核心悬念。"]
+                "plot_threads": ["推进故事主线，解开大纲中的核心悬念。"],
+                "completed_milestones": []
             }
             
         with open(self.memory_file, "w", encoding="utf-8") as f:
@@ -502,6 +507,9 @@ class NovelGenerator:
 2. 字数目标：1200 - 1500 字。
 3. 要求：深度描写环境细节（如声音、光线、气味、材质质感），切忌概述性语言。展现角色出场时的内心活动与最初的张力。在写到三分之一处自然停下，留下后续故事发展的钩子。
 4. 请直接输出正文，不要带章节名，不要有任何“第一部分开始”等解释性或批注文字。
+5. 角色与情节一致性防线：
+   - 必须严格遵循 `世界记忆设定` 中每个人物当前的最新“性格与心理成长状态（personality）”和“情感状态（emotion）”，绝不允许人物性格退化至前文已蜕变的旧阶段。
+   - 仔细审查并对照 `completed_milestones`（已发生核心剧情里程碑），严禁重复描写或循环重现任何此前章节已发生的重大相遇、决战或细节桥段。若大纲事件与历史类似，须写出剧情层面的递进。
 """
         
         part_1 = self.call_llm(prompt_p1, temperature=self.temperature).strip()
@@ -527,6 +535,7 @@ class NovelGenerator:
 2. 字数目标：1200 - 1500 字。
 3. 要求：保持与前文风格、语调和叙事节奏的绝对一致。在此部分，让本章的核心冲突正面碰撞，设计多轮具有潜台词、机锋和性格特色的人物对话。详细描写对话时的眼神、神态、肢体细节与内心算计。在写到三分之二处自然停下，留有未完悬念。
 4. 请直接输出接续部分的正文，不要有任何解释性、标记性或批注文字。
+5. 角色与情节一致性防线：严格遵循每个人物最新的心智成长状态和情感定位，拒绝任何与先前章节已发生剧情矛盾的行为退化，确保剧情连贯合理。
 """
         
         part_2 = self.call_llm(prompt_p2, temperature=self.temperature).strip()
@@ -553,6 +562,7 @@ class NovelGenerator:
 2. 字数目标：1200 - 1500 字。
 3. 要求：解决或悬置第二部分的冲突，迎来本章的阶段性结果与高潮。一定要在细节处不露痕迹地埋下本章要求的伏笔：【{foreshadowing}】。直接以章节的自然叙述结束，输出的内容应能与前文无缝拼接。
 4. 请直接输出接续部分的正文，不要有任何解释性、标记性或批注文字。
+5. 角色与情节一致性防线：确保本章的收尾在角色心智状态和历史事件的连贯上无懈可击，坚决避免任何人物性格的退化或历史情节的重复发生。
 """
         
         part_3 = self.call_llm(prompt_p3, temperature=self.temperature).strip()
@@ -613,7 +623,7 @@ class NovelGenerator:
         
         prompt = f"""
 你是一位小说世界观与剧情线记录官。
-根据刚刚写完的第 {chapter_num} 章《{title}》的剧情，对比现有的世界记忆，提取出在本章中发生了状态/位置/情感变化的人物、有去向或状态变动的道具、人际关系变化、以及新增或收回的悬念伏笔。
+根据刚刚写完的第 {chapter_num} 章《{title}》的剧情，对比现有的世界记忆，提取出在本章中发生了状态/位置/情感/性格变化的人物、有去向或状态变动的道具、人际关系变化、新增或收回的悬念伏笔、以及本章完成的重要剧情里程碑。
 
 当前的世界记忆：
 {json.dumps(current_memory, ensure_ascii=False, indent=2)}
@@ -633,6 +643,7 @@ class NovelGenerator:
       "status": "本章最新的具体状态（详细描写，字数在80字左右）",
       "location": "本章结束时所处的具体位置",
       "emotion": "本章最新的情感线变化",
+      "personality": "本章最新的性格特征与心理成长变化（若本章中其性格、心智、处事作风发生了改变或蜕变，请在此详细描述其最新状态，例如：已由先前的隐忍退让转变为果断无情；若没有变化则不填）",
       "description": "如果是首次出场，请提供背景描述，否则不要包含此字段"
     }}
   }},
@@ -646,7 +657,8 @@ class NovelGenerator:
     "发生关系变化的人物（如 龙一与雷震）": "本章最新的关系变化"
   }},
   "plot_threads_added": ["本章新增的剧情线/悬念（如果没有则空数组）"],
-  "plot_threads_removed": ["本章已解决或收起的剧情线/悬念（如果没有则空数组）"]
+  "plot_threads_removed": ["本章已解决或收起的剧情线/悬念（如果没有则空数组）"],
+  "new_milestone": "本章完成的重要剧情里程碑描述（一句简明扼要的话，总结本章主角完成了什么实质遭遇、击败了谁或达成了什么目的，格式为：第X章：主角在XX做了XX；若无重大事件则不填或为空字符串）"
 }}
 
 请确保返回纯 JSON 对象，不要包含 ```json 等任何额外包装。
@@ -696,6 +708,15 @@ class NovelGenerator:
                                     if thread in active_thread or active_thread in thread:
                                         current_memory["plot_threads"].remove(active_thread)
                                         break
+                                        
+                    # Completed Milestones
+                    if "completed_milestones" not in current_memory:
+                        current_memory["completed_milestones"] = []
+                    new_milestone = updates.get("new_milestone")
+                    if new_milestone and isinstance(new_milestone, str):
+                        new_milestone = new_milestone.strip()
+                        if new_milestone and new_milestone not in current_memory["completed_milestones"]:
+                            current_memory["completed_milestones"].append(new_milestone)
                                         
                     # Save memory
                     with open(self.memory_file, "w", encoding="utf-8") as f:
